@@ -845,47 +845,38 @@
                 renderGames(gamesList);
                 document.getElementById('gamesCount').textContent = gamesList.length;
             } catch (err) {
-                console.error('Ошибка загрузки игр, использую запасной список:', err);
-                gamesList = getFallbackGames();
-                renderGames(gamesList);
-                document.getElementById('gamesCount').textContent = gamesList.length;
+                console.error('Ошибка загрузки игр:', err);
+                showNotif('⚠️ Ошибка', 'Не удалось загрузить список игр');
             }
         }
 
         function getSteamAppId(gameName) {
             const map = {
-                'Doom Eternal': '782330',
+                'Doom eternal': '782330',
                 'Terraria': '105600',
                 'Factorio': '427520',
                 'Among Us': '945360',
                 'Barotruma': '363970',
                 'PUBG': '578080',
                 'Brick Rigs': '552100',
-                'War Thunder': '236390',
+                'War thunder': '236390',
                 'Team Fortress 2': '440',
                 'Raft': '648800',
                 'SCP': '700330',
                 'Minecraft': '1672970',
                 'Space Engineers': '244850',
-                'Lethal Company': '1966720',
+                'Lethal company': '1966720',
                 'Garry\'s Mod': '4000',
                 'GTA': '271590',
                 'Scrap Mechanic': '387990',
                 'ASTRONEER': '361420',
                 'Portal 2': '620',
                 'World of Tanks': '1407200',
-                'Kerbal Space Program': '220200',
+                'KSP': '220200',
                 'Battlefield': '1238810',
                 'Don\'t Starve Together': '322330'
             };
             return map[gameName] || '0';
-        }
-
-        function getFallbackGames() {
-            return [
-                { id: '898661883144437791', name: 'Doom Eternal', image: 'https://cdn.akamai.steamstatic.com/steam/apps/782330/header.jpg', description: 'Doom Eternal — динамичный шутер.' },
-                { id: '898890418857594881', name: 'Terraria', image: 'https://cdn.akamai.steamstatic.com/steam/apps/105600/header.jpg', description: 'Terraria — песочница.' }
-            ];
         }
 
         function renderGames(games) {
@@ -914,16 +905,17 @@
                 return;
             }
             currentGame = game;
-            document.getElementById('popupImg').src = game.image;
+            document.getElementById('popupImg').src = game.image || '';
             document.getElementById('popupTitle').textContent = game.name;
             document.getElementById('popupDesc').textContent = game.description;
             document.getElementById('gamePopup').classList.add('active');
             document.body.style.overflow = 'hidden';
         }
 
-        // ==================== ВЫДАЧА РОЛИ ====================
+        // ==================== ВЫДАЧА РОЛИ (УЛУЧШЕННАЯ) ====================
         async function assignRole() {
             if (!currentGame) return;
+
             if (!discordCode) {
                 showNotif('🔒 Требуется вход', 'Сначала авторизуйтесь через Discord');
                 login();
@@ -944,11 +936,19 @@
                     showNotif('✅ Роль выдана!', `Теперь у вас есть роль для ${currentGame.name}. Добро пожаловать!`);
                     document.getElementById('gamePopup').classList.remove('active');
                     document.body.style.overflow = '';
-                    localStorage.removeItem('discord_code');
-                    discordCode = null;
+                    // Код НЕ удаляем, чтобы использовать повторно (если вдруг сервер позволяет)
                 } else {
-                    const snippet = text.length > 200 ? text.substring(0, 200) + '…' : text;
-                    showNotif('❌ Ошибка', `Сервер вернул: ${snippet}`);
+                    // Если ошибка указывает на недействительный код, предлагаем перелогиниться
+                    if (response.status === 400 || response.status === 500 || text.includes('invalid')) {
+                        showNotif('❌ Сессия истекла', 'Пожалуйста, войдите заново');
+                        // Удаляем недействительный код
+                        localStorage.removeItem('discord_code');
+                        discordCode = null;
+                        updateAuthUI();
+                    } else {
+                        const snippet = text.length > 200 ? text.substring(0, 200) + '…' : text;
+                        showNotif('❌ Ошибка', `Сервер вернул: ${snippet}`);
+                    }
                 }
             } catch (err) {
                 console.error('Ошибка сети:', err);
@@ -1140,7 +1140,7 @@
             document.getElementById('adminPanel').style.display = 'none';
         });
 
-        // ==================== ИНИЦИАЛИЗАЦИЯ (МЕНЮ, ТЕМА, ПОИСК) ====================
+        // ==================== ИНИЦИАЛИЗАЦИЯ ====================
         function initGameSearch() {
             document.getElementById('gameSearch').addEventListener('input', function(e) {
                 const q = e.target.value.toLowerCase();
@@ -1256,6 +1256,22 @@
             });
         }
 
+        function addRefreshButton() {
+            const header = document.querySelector('#games .section-header');
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-secondary';
+            btn.style.marginTop = '10px';
+            btn.innerHTML = '<i class="fas fa-sync-alt"></i> Обновить игры';
+            btn.addEventListener('click', async () => {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Обновление...';
+                await fetchGames();
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-sync-alt"></i> Обновить игры';
+            });
+            header.appendChild(btn);
+        }
+
         // ==================== ЗАПУСК ====================
         window.addEventListener('load', function() {
             initHeader();
@@ -1273,6 +1289,7 @@
             loadFromStorage();
             fetchStats();
             fetchGames();
+            addRefreshButton();
             setInterval(fetchStats, 30000);
 
             document.getElementById('connectToGame').addEventListener('click', assignRole);
