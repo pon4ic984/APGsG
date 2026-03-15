@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>1APGsG Gaming Community — Найди свою команду</title>
+    <title>APGsG Gaming Community — Найди свою команду</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="icon" type="image/x-icon" href="https://i.ibb.co/2YmkKV7G/source-v2.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -1790,7 +1790,7 @@
                 </div>
                 <div class="feature-card">
                     <div class="f-icon f-icon-2">🛡️</div>
-                    <h3>С токсичности</h3>
+                    <h3>Без токсичности</h3>
                     <p>Строгая модерация и правила обеспечивают комфортную атмосферу для всех.</p>
                 </div>
                 <div class="feature-card">
@@ -1913,7 +1913,7 @@
                 <div class="info-section active" id="about-content">
                     <h3>О нашем сообществе</h3>
                     <p>APGsG — крупнейшее игровое сообщество Discord, созданное для объединения геймеров со всего мира. Мы предоставляем платформу для поиска тиммейтов и общения.</p>
-                    <p>Сервер создан в 2021 году и объединил более 800 игроков. Мы гордимся дружелюбной атмосферой и строгими правилами против токсичности.</p>
+                    <p>Сервер создан в 2020 году и объединил более 800 игроков. Мы гордимся дружелюбной атмосферой и строгими правилами против токсичности.</p>
                 </div>
                 <div class="info-section" id="rules-content">
                     <h3>Правила сообщества</h3>
@@ -1948,8 +1948,8 @@
                     <h3>Контакты</h3>
                     <ul>
                         <li>Discord: <a href="https://discord.gg/x7PH4TBJdt" target="_blank" style="color: var(--primary-light); text-decoration: none;">discord.gg/x7PH4TBJdt</a></li>
-                        <li>Сотрудничество: много хотите</li>
-                        <li>Поддержка: дс @pon4icc</li>
+                        <li>Сотрудничество: partnership@apgsg.com</li>
+                        <li>Поддержка: support@apgsg.com</li>
                     </ul>
                 </div>
                 <div class="info-section" id="faq-content">
@@ -2157,7 +2157,7 @@
                 } else if (discordCode) {
                     authSection.innerHTML = `
                         <div class="user-info" style="display:flex; align-items:center; gap:8px;">
-                            <span style="color: var(--accent);">✅ Авторизовано</span>
+                            <span style="color: var(--accent);">✅ Авторизовано (первый шаг)</span>
                             <button class="btn-logout" id="logoutBtn" style="background:rgba(255,255,255,0.1); border:1px solid var(--dark-border); color:var(--text-secondary); padding:6px 12px; border-radius:var(--radius-sm); cursor:pointer;">Выйти</button>
                         </div>
                     `;
@@ -2184,6 +2184,7 @@
                 }
             }
 
+            // ---------- ПОЛУЧЕНИЕ СТАТИСТИКИ ----------
             async function fetchStats() {
                 try {
                     const [onlineRes, totalRes, inGameRes] = await Promise.all([
@@ -2224,6 +2225,7 @@
                 }
             }
 
+            // ---------- ПОЛУЧЕНИЕ СПИСКА ИГР ----------
             async function fetchGames() {
                 try {
                     const response = await fetch(API.roles);
@@ -2344,6 +2346,7 @@
                 document.getElementById('bulkAssignBtn').disabled = count === 0;
             }
 
+            // ---------- ВЫДАЧА ОДНОЙ РОЛИ ----------
             async function assignSingleRole(roleId) {
                 let url;
                 if (refreshToken) {
@@ -2398,6 +2401,47 @@
                 }
             }
 
+            // ---------- МАССОВАЯ ВЫДАЧА ----------
+            async function assignMultipleRoles(roleIds) {
+                if (!refreshToken) {
+                    showNotif('❌ Ошибка', 'Нет refreshToken для массовой выдачи');
+                    return false;
+                }
+                const rolesStr = roleIds.join(',');
+                const url = `${API.addRole2}&role=${rolesStr}&refreshToken=${refreshToken}`;
+                const response = await fetch(url);
+                const text = await response.text();
+
+                if (response.ok) {
+                    let data = null;
+                    try {
+                        data = JSON.parse(text);
+                    } catch (e) {}
+
+                    if (data && typeof data === 'object') {
+                        if (data.refreshToken) {
+                            refreshToken = data.refreshToken;
+                            localStorage.setItem('apgsg_refresh', refreshToken);
+                        }
+                        if (data.user) {
+                            currentUser = data.user;
+                            localStorage.setItem('apgsg_user', JSON.stringify(currentUser));
+                        }
+                    }
+                    return true;
+                } else {
+                    if (response.status === 400 || response.status === 500 || text.includes('invalid')) {
+                        showNotif('❌ Сессия истекла', 'Пожалуйста, войдите заново');
+                        logout();
+                    } else {
+                        const snippet = text.length > 200 ? text.substring(0, 200) + '…' : text;
+                        showNotif('❌ Ошибка', `Сервер вернул: ${snippet}`);
+                    }
+                    return false;
+                }
+            }
+
+            // ---------- ОБРАБОТЧИК ДЛЯ ОДИНОЧНОЙ ВЫДАЧИ ИЗ ПОПАПА ----------
             async function assignRoleFromPopup() {
                 if (!currentGame) return;
                 const btn = document.getElementById('connectToGame');
@@ -2417,46 +2461,71 @@
                 btn.disabled = false;
             }
 
+            // ---------- МАССОВАЯ ВЫДАЧА ПО ЧЕКБОКСАМ ----------
             async function bulkAssignRoles() {
                 if (selectedGames.size === 0) return;
 
-                if (!refreshToken && !discordCode) {
-                    showNotif('🔒 Требуется вход', 'Сначала авторизуйтесь через Discord');
-                    login();
+                // Если есть refreshToken, сразу выдаём всё одной пачкой
+                if (refreshToken) {
+                    const btn = document.getElementById('bulkAssignBtn');
+                    const original = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Выдача...';
+                    btn.disabled = true;
+
+                    const roleIds = Array.from(selectedGames);
+                    const success = await assignMultipleRoles(roleIds);
+                    if (success) {
+                        showNotif('✅ Готово', `Роли успешно выданы (${roleIds.length})`);
+                        document.querySelectorAll('.game-checkbox input:checked').forEach(cb => cb.checked = false);
+                        selectedGames.clear();
+                        updateSelectedCount();
+                        updateAuthUI();
+                    }
+
+                    btn.innerHTML = original;
+                    btn.disabled = false;
                     return;
                 }
 
-                const btn = document.getElementById('bulkAssignBtn');
-                const original = btn.innerHTML;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Выдача...';
-                btn.disabled = true;
+                // Если есть discordCode (первый вход), сначала получаем refreshToken через первую роль
+                if (discordCode) {
+                    const roleIds = Array.from(selectedGames);
+                    const firstRole = roleIds[0];
+                    const remainingRoles = roleIds.slice(1);
 
-                const roleIds = Array.from(selectedGames);
-                let successCount = 0;
-                let failCount = 0;
+                    const btn = document.getElementById('bulkAssignBtn');
+                    const original = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Выдача...';
+                    btn.disabled = true;
 
-                for (const roleId of roleIds) {
-                    const success = await assignSingleRole(roleId);
-                    if (success) {
-                        successCount++;
-                    } else {
-                        failCount++;
+                    const firstSuccess = await assignSingleRole(firstRole);
+                    if (!firstSuccess) {
+                        btn.innerHTML = original;
+                        btn.disabled = false;
+                        return;
                     }
-                    if (!refreshToken && !discordCode && !currentUser) break;
-                }
 
-                if (successCount > 0) {
-                    showNotif('✅ Готово', `Успешно выдано ролей: ${successCount}${failCount > 0 ? `, не удалось: ${failCount}` : ''}`);
+                    if (remainingRoles.length > 0) {
+                        const success = await assignMultipleRoles(remainingRoles);
+                        if (success) {
+                            showNotif('✅ Готово', `Все роли выданы (${roleIds.length})`);
+                        }
+                    } else {
+                        showNotif('✅ Готово', `Роль выдана`);
+                    }
+
                     document.querySelectorAll('.game-checkbox input:checked').forEach(cb => cb.checked = false);
                     selectedGames.clear();
                     updateSelectedCount();
                     updateAuthUI();
-                } else {
-                    showNotif('❌ Ошибка', 'Не удалось выдать ни одной роли');
+
+                    btn.innerHTML = original;
+                    btn.disabled = false;
+                    return;
                 }
 
-                btn.innerHTML = original;
-                btn.disabled = false;
+                showNotif('🔒 Требуется вход', 'Сначала авторизуйтесь через Discord');
+                login();
             }
 
             function showNotif(title, text) {
@@ -2477,6 +2546,7 @@
                 }[m]));
             }
 
+            // ---------- ЗВЁЗДЫ РЕЙТИНГА ----------
             function initRatingStars() {
                 const stars = document.querySelectorAll('.rating-input .star');
                 const ratingValue = document.querySelector('.rating-value');
@@ -2497,6 +2567,7 @@
                 document.querySelector('.rating-value').textContent = '0/5';
             }
 
+            // ---------- КОММЕНТАРИИ ----------
             function loadComments() {
                 const saved = localStorage.getItem('apgsg_comments');
                 comments = saved ? JSON.parse(saved) : [{
@@ -2661,6 +2732,7 @@
                 document.getElementById('adminPanel').style.display = 'none';
             });
 
+            // ---------- ИНИЦИАЛИЗАЦИЯ ----------
             function initGameSearch() {
                 document.getElementById('gameSearch').addEventListener('input', function(e) {
                     const q = e.target.value.toLowerCase();
@@ -2834,7 +2906,7 @@
                 });
 
                 document.querySelector('.footer-bottom p').innerHTML =
-                    `&copy; ${new Date().getFullYear()} APGsG Gaming Community. Все права ну как то защищены.`;
+                    `&copy; ${new Date().getFullYear()} APGsG Gaming Community. Все права защищены.`;
             });
         })();
     </script>
