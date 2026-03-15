@@ -547,7 +547,7 @@
         <div class="container">
             <div class="section-header fade-up"><h2>Поддерживаемые <span class="text-gradient">игры</span></h2><p>Найди команду для своих любимых игр</p><div class="section-line"></div></div>
             <div class="games-grid stagger" id="gamesGrid">
-                <!-- Список игр будет вставлен через JS -->
+                <!-- игры будут вставлены скриптом -->
             </div>
         </div>
     </section>
@@ -658,23 +658,23 @@
     </div>
 
     <script>
-        // ⚙️ КОНФИГУРАЦИЯ – всё под ваши данные
+        // ==================== КОНФИГУРАЦИЯ ====================
         const CONFIG = {
             CLIENT_ID: '911925216421236776',
-            REDIRECT_URI: 'https://pon4ic984.github.io/APGsG/',   // ТОЧНЫЙ АДРЕС САЙТА
-            API_BASE_URL: 'https://441940.site.bot-hosting.cloud',   // Хост бэкенда (HTTPS!)
-            FEEDBACK_WEBHOOK_URL: 'https://discord.com/api/webhooks/...', // 👈 ЗАМЕНИТЕ
+            REDIRECT_URI: 'https://pon4ic984.github.io/APGsG/',
+            API_BASE_URL: 'https://441940.site.bot-hosting.cloud', // новый домен
+            FEEDBACK_WEBHOOK_URL: 'https://discord.com/api/webhooks/...', // ЗАМЕНИТЕ
             ADMIN_IDS: ['1033615399763320862', '665566492158590976']
         };
 
-        // Полный список игр (с правильными roleId)
+        // Список игр с ID ролей (получен из вашего API)
         const GAMES = [
             { id: '898661883144437791', name: 'Doom Eternal', image: 'https://cdn.akamai.steamstatic.com/steam/apps/782330/header.jpg', description: 'Doom Eternal — динамичный шутер.' },
             { id: '898890418857594881', name: 'Terraria', image: 'https://cdn.akamai.steamstatic.com/steam/apps/105600/header.jpg', description: 'Terraria — песочница с элементами RPG.' },
             { id: '1237465505904988322', name: 'Factorio', image: 'https://cdn.akamai.steamstatic.com/steam/apps/427520/header.jpg', description: 'Factorio — автоматизация.' },
             { id: '943054984952553522', name: 'Among Us', image: 'https://cdn.akamai.steamstatic.com/steam/apps/945360/header.jpg', description: 'Among Us — игра на дедукцию.' },
             { id: '1002538533057208431', name: 'Barotruma', image: 'https://cdn.akamai.steamstatic.com/steam/apps/363970/header.jpg', description: 'Barotruma — симулятор подлодки.' },
-            { id: '898513787727003679', name: 'Play Craft', image: 'https://via.placeholder.com/300x150?text=Play+Craft', description: 'Play Craft — песочница.' },
+            { id: '898513787727003679', name: 'Play Craft', image: 'https://cdn.akamai.steamstatic.com/steam/apps/1135230/header.jpg?t=1616515584', description: 'Play Craft — песочница.' },
             { id: '937301918450065428', name: 'PUBG', image: 'https://cdn.akamai.steamstatic.com/steam/apps/578080/header.jpg', description: 'PUBG — королевская битва.' },
             { id: '898512495629713429', name: 'Brick Rigs', image: 'https://cdn.akamai.steamstatic.com/steam/apps/552100/header.jpg', description: 'Brick Rigs — физическая песочница.' },
             { id: '1237465330851254332', name: 'War Thunder', image: 'https://cdn.akamai.steamstatic.com/steam/apps/236390/header.jpg', description: 'War Thunder — военный симулятор.' },
@@ -700,8 +700,8 @@
         let comments = [];
         let discordCode = null;
 
-        // Загрузка из localStorage
-        function loadUserFromStorage() {
+        // ==================== ЗАГРУЗКА ИЗ STORAGE ====================
+        function loadFromStorage() {
             const savedUser = localStorage.getItem('apgsg_user');
             if (savedUser) {
                 try {
@@ -720,19 +720,11 @@
                 discordCode = code;
                 localStorage.setItem('discord_code', code);
                 window.history.replaceState({}, document.title, window.location.pathname);
-                // Попытка получить данные пользователя (если бэкенд поддерживает)
-                fetchUserData(code);
             }
             updateAuthUI();
         }
 
-        // Получение данных пользователя (заглушка, можно реализовать позже)
-        async function fetchUserData(code) {
-            // Если у бэкенда есть эндпоинт для получения данных по коду, добавьте сюда
-            // Например: /getUser?code=...
-            console.log('Получен код, можно запросить данные пользователя:', code);
-        }
-
+        // ==================== АВТОРИЗАЦИЯ ====================
         function login() {
             const url = `https://discord.com/api/oauth2/authorize?client_id=${CONFIG.CLIENT_ID}&redirect_uri=${encodeURIComponent(CONFIG.REDIRECT_URI)}&response_type=code&scope=identify+guilds.join`;
             window.location.href = url;
@@ -762,7 +754,7 @@
                 authSection.innerHTML = `
                     <div class="user-info" style="display:flex; align-items:center; gap:8px;">
                         <img src="https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png" alt="avatar" style="width:28px; height:28px; border-radius:50%;" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
-                        <span>${currentUser.username}</span>
+                        <span>${escapeHtml(currentUser.username)}</span>
                         <button class="btn-logout" id="logoutBtn" style="background:rgba(255,255,255,0.1); border:1px solid var(--dark-border); color:var(--text-secondary); padding:6px 12px; border-radius:var(--radius-sm); cursor:pointer;">Выйти</button>
                     </div>
                 `;
@@ -808,7 +800,111 @@
             }
         }
 
-        // --- Звёзды рейтинга ---
+        // ==================== ВЫДАЧА РОЛИ (исправленная) ====================
+        async function assignRole() {
+            if (!currentGame) return;
+
+            if (!discordCode) {
+                showNotif('🔒 Требуется вход', 'Сначала авторизуйтесь через Discord');
+                login();
+                return;
+            }
+
+            const btn = document.getElementById('connectToGame');
+            const original = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Подключение...';
+            btn.disabled = true;
+
+            try {
+                const roleId = currentGame.id;
+                const url = `${CONFIG.API_BASE_URL}/MARAZMUS?question=addRole&role=${roleId}&oAuth2code=${discordCode}`;
+
+                console.log('Запрос к серверу:', url);
+
+                const response = await fetch(url);
+                const text = await response.text();
+
+                console.log('Ответ сервера (статус', response.status, '):', text);
+
+                if (response.ok && text.trim().toLowerCase().includes('request acknowledged')) {
+                    showNotif('✅ Роль выдана!', `Теперь у вас есть роль для ${currentGame.name}. Добро пожаловать!`);
+                    document.getElementById('gamePopup').classList.remove('active');
+                    document.body.style.overflow = '';
+
+                    // Код одноразовый – удаляем его
+                    localStorage.removeItem('discord_code');
+                    discordCode = null;
+                } else {
+                    if (response.status === 500) {
+                        showNotif('❌ Ошибка сервера', 'Сервер вернул внутреннюю ошибку. Возможно, код уже использован или недействителен.');
+                    } else if (response.status === 400) {
+                        showNotif('❌ Неверный запрос', 'Сервер отклонил запрос. Проверьте код авторизации.');
+                    } else {
+                        const snippet = text.length > 200 ? text.substring(0, 200) + '…' : text;
+                        showNotif('❌ Ошибка', `Сервер вернул: ${snippet}`);
+                    }
+                }
+            } catch (err) {
+                console.error('Ошибка сети или CORS:', err);
+                showNotif('❌ Ошибка сети', 'Не удалось соединиться с сервером.');
+            } finally {
+                btn.innerHTML = original;
+                btn.disabled = false;
+            }
+        }
+
+        // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
+        function showNotif(title, text) {
+            const n = document.getElementById('notification');
+            n.querySelector('h4').textContent = title;
+            n.querySelector('p').textContent = text;
+            n.classList.add('active');
+            setTimeout(() => n.classList.remove('active'), 5000);
+        }
+
+        function escapeHtml(unsafe) {
+            if (!unsafe) return '';
+            return unsafe.replace(/[&<>"]/g, function(m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m] || m;
+            });
+        }
+
+        // ==================== ЗАГРУЗКА ИГР ====================
+        function loadGames() {
+            const grid = document.getElementById('gamesGrid');
+            grid.innerHTML = '';
+            GAMES.forEach(game => {
+                const card = document.createElement('div');
+                card.className = 'game-card';
+                card.dataset.game = game.id;
+                card.innerHTML = `
+                    <div class="game-thumb">
+                        <img src="${game.image}" alt="${game.name}" onerror="this.src='data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22300%22%20height%3D%22150%22%3E%3Crect%20width%3D%22300%22%20height%3D%22150%22%20fill%3D%22%23333%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2216%22%3E${game.name}%3C%2Ftext%3E%3C%2Fsvg%3E'">
+                        <div class="game-thumb-overlay"></div>
+                    </div>
+                    <div class="game-body"><h4>${game.name}</h4></div>
+                `;
+                card.addEventListener('click', () => openGamePopup(game));
+                grid.appendChild(card);
+            });
+            document.getElementById('gamesCount').textContent = GAMES.length;
+        }
+
+        function openGamePopup(game) {
+            if (!currentUser && !discordCode) {
+                showNotif('🔒 Требуется вход', 'Сначала авторизуйтесь через Discord');
+                login();
+                return;
+            }
+            currentGame = game;
+            document.getElementById('popupImg').src = game.image;
+            document.getElementById('popupTitle').textContent = game.name;
+            document.getElementById('popupDesc').textContent = game.description;
+            document.getElementById('gamePopup').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // ==================== ЗВЁЗДЫ РЕЙТИНГА ====================
         function initRatingStars() {
             const stars = document.querySelectorAll('.rating-input .star');
             const ratingValue = document.querySelector('.rating-value');
@@ -829,7 +925,7 @@
             document.querySelector('.rating-value').textContent = '0/5';
         }
 
-        // --- Комментарии (локальное хранилище) ---
+        // ==================== КОММЕНТАРИИ ====================
         function loadComments() {
             const saved = localStorage.getItem('apgsg_comments');
             comments = saved ? JSON.parse(saved) : [
@@ -882,17 +978,6 @@
             const sum = valid.reduce((acc, c) => acc + c.rating, 0);
             const avg = (sum / valid.length).toFixed(1);
             document.getElementById('averageRating').textContent = avg;
-        }
-
-        function escapeHtml(unsafe) {
-            if (!unsafe) return '';
-            return unsafe.replace(/[&<>"]/g, function(m) {
-                if (m === '&') return '&amp;';
-                if (m === '<') return '&lt;';
-                if (m === '>') return '&gt;';
-                if (m === '"') return '&quot;';
-                return m;
-            });
         }
 
         document.getElementById('submitFeedback').addEventListener('click', async function(e) {
@@ -989,103 +1074,7 @@
             document.getElementById('adminPanel').style.display = 'none';
         });
 
-        // --- Загрузка игр ---
-        function loadGames() {
-            const grid = document.getElementById('gamesGrid');
-            grid.innerHTML = '';
-            GAMES.forEach(game => {
-                const card = document.createElement('div');
-                card.className = 'game-card';
-                card.dataset.game = game.id;
-                card.innerHTML = `
-                    <div class="game-thumb">
-                        <img src="${game.image}" alt="${game.name}" onerror="this.src='https://via.placeholder.com/300x150?text=${encodeURIComponent(game.name)}'">
-                        <div class="game-thumb-overlay"></div>
-                    </div>
-                    <div class="game-body"><h4>${game.name}</h4></div>
-                `;
-                card.addEventListener('click', () => openGamePopup(game));
-                grid.appendChild(card);
-            });
-            document.getElementById('gamesCount').textContent = GAMES.length;
-        }
-
-        function openGamePopup(game) {
-            if (!currentUser && !discordCode) {
-                showNotif('🔒 Требуется вход', 'Сначала авторизуйтесь через Discord');
-                login();
-                return;
-            }
-            currentGame = game;
-            document.getElementById('popupImg').src = game.image;
-            document.getElementById('popupTitle').textContent = game.name;
-            document.getElementById('popupDesc').textContent = game.description;
-            document.getElementById('gamePopup').classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
-
-        // --- ВЫДАЧА РОЛИ (исправленная версия с диагностикой) ---
-        document.getElementById('connectToGame').addEventListener('click', async function() {
-            if (!currentGame) return;
-
-            // Приоритет: используем код, если он есть, иначе пытаемся использовать данные пользователя (но без кода нельзя)
-            let codeToUse = discordCode;
-            if (!codeToUse) {
-                showNotif('🔒 Требуется вход', 'Сначала авторизуйтесь через Discord');
-                login();
-                return;
-            }
-
-            const btn = this;
-            const original = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Подключение...';
-            btn.disabled = true;
-
-            try {
-                const roleId = currentGame.id; // ID роли
-                const url = `${CONFIG.API_BASE_URL}/MARAZMUS?question=addRole&role=${roleId}&oAuth2code=${codeToUse}`;
-                
-                console.log('Отправка запроса на URL:', url); // Для отладки
-                
-                const response = await fetch(url);
-                const text = await response.text();
-                
-                console.log('Ответ сервера:', text); // Для отладки
-                
-                // Проверяем, содержит ли ответ ожидаемую строку (игнорируем пробелы и регистр)
-                if (text.trim().toLowerCase().includes('request acknowledged')) {
-                    showNotif('✅ Роль выдана!', `Теперь у вас есть роль для ${currentGame.name}. Добро пожаловать!`);
-                    document.getElementById('gamePopup').classList.remove('active');
-                    document.body.style.overflow = '';
-                    
-                    // Очищаем код, так как он использован
-                    localStorage.removeItem('discord_code');
-                    discordCode = null;
-                    
-                    // Если хотите, можете запросить данные пользователя здесь
-                    // Например: fetchUserData(codeToUse);
-                } else {
-                    // Если ответ не содержит ожидаемой строки, показываем его в уведомлении для диагностики
-                    showNotif('❌ Ошибка', `Сервер вернул: ${text.substring(0, 100)}`);
-                }
-            } catch (err) {
-                console.error('Ошибка при запросе:', err);
-                showNotif('❌ Ошибка', 'Не удалось соединиться с сервером. Проверьте консоль.');
-            } finally {
-                btn.innerHTML = original;
-                btn.disabled = false;
-            }
-        });
-
-        function showNotif(title, text) {
-            const n = document.getElementById('notification');
-            n.querySelector('h4').textContent = title;
-            n.querySelector('p').textContent = text;
-            n.classList.add('active');
-            setTimeout(() => n.classList.remove('active'), 5000);
-        }
-
-        // --- Поиск игр ---
+        // ==================== ИНИЦИАЛИЗАЦИЯ (МЕНЮ, ТЕМА, ПОИСК, АНИМАЦИИ) ====================
         function initGameSearch() {
             document.getElementById('gameSearch').addEventListener('input', function(e) {
                 const q = e.target.value.toLowerCase();
@@ -1096,7 +1085,6 @@
             });
         }
 
-        // --- Случайная игра ---
         function initRandomTeam() {
             document.getElementById('randomTeamBtn').addEventListener('click', function() {
                 const cards = document.querySelectorAll('.game-card');
@@ -1104,7 +1092,6 @@
             });
         }
 
-        // --- Мобильное меню ---
         function initMobileMenu() {
             const toggle = document.getElementById('mobileToggle');
             const nav = document.getElementById('navLinks');
@@ -1204,7 +1191,7 @@
             });
         }
 
-        // --- Запуск ---
+        // ==================== ЗАПУСК ====================
         window.addEventListener('load', function() {
             initHeader();
             initMobileMenu();
@@ -1218,9 +1205,10 @@
             initRandomTeam();
             initRatingStars();
             loadComments();
-            loadUserFromStorage();
+            loadFromStorage();
             loadGames();
 
+            document.getElementById('connectToGame').addEventListener('click', assignRole);
             document.getElementById('popupClose').addEventListener('click', () => {
                 document.getElementById('gamePopup').classList.remove('active');
                 document.body.style.overflow = '';
