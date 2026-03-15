@@ -2368,14 +2368,14 @@
                         if (data.refreshToken) {
                             refreshToken = data.refreshToken;
                             localStorage.setItem('apgsg_refresh', refreshToken);
-                            if (data.user) {
-                                currentUser = data.user;
-                                localStorage.setItem('apgsg_user', JSON.stringify(currentUser));
-                            }
-                            if (discordCode) {
-                                localStorage.removeItem('discord_code');
-                                discordCode = null;
-                            }
+                        }
+                        if (data.user) {
+                            currentUser = data.user;
+                            localStorage.setItem('apgsg_user', JSON.stringify(currentUser));
+                        }
+                        if (discordCode) {
+                            localStorage.removeItem('discord_code');
+                            discordCode = null;
                         }
                     } else {
                         if (!refreshToken && discordCode && text.length > 0 && !text.toLowerCase().includes('request acknowledged')) {
