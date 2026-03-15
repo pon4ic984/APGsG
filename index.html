@@ -7,8 +7,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="icon" type="image/x-icon" href="https://i.ibb.co/2YmkKV7G/source-v2.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <meta name="description" content="APGsG — Discord сервер для поиска тиммейтов в CS2, Dota 2, Valorant, Apex Legends и другие игры.">
-    <meta name="keywords" content="APGsG, Discord, поиск тиммейтов, найти команду, CS2, Dota 2, Valorant">
     <style>
         /* ========== СБРОС И ПЕРЕМЕННЫЕ ========== */
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -498,9 +496,9 @@
                     <h1 class="hero-title">Найди свою <span class="text-gradient">команду в APGsG</span></h1>
                     <p class="hero-desc">Крупнейший Discord-сервер для геймеров. Находи тиммейтов и становись частью дружного сообщества.</p>
                     <div class="stats-row">
-                        <div class="stat-box"><span class="stat-val" id="totalMembers">...</span><span class="stat-lbl">Участников</span></div>
-                        <div class="stat-box"><span class="stat-val" id="onlineMembers">...</span><span class="stat-lbl">Онлайн</span></div>
-                        <div class="stat-box"><span class="stat-val" id="gamingMembers">...</span><span class="stat-lbl">В игре</span></div>
+                        <div class="stat-box"><span class="stat-val" id="totalMembers">--</span><span class="stat-lbl">Участников</span></div>
+                        <div class="stat-box"><span class="stat-val" id="onlineMembers">--</span><span class="stat-lbl">Онлайн</span></div>
+                        <div class="stat-box"><span class="stat-val" id="gamingMembers">--</span><span class="stat-lbl">В игре</span></div>
                     </div>
                     <div class="search-bar">
                         <input type="text" class="search-input" placeholder="🔍 Поиск игры..." id="gameSearch">
@@ -517,7 +515,7 @@
                             <div class="wc-avatar"><img src="https://i.ibb.co/6JVWs9Rj/image.png" alt="APGsG"></div>
                             <div><div class="wc-name">APGsG Gaming</div><div class="wc-sub">Игровое сообщество</div></div>
                         </div>
-                        <div class="wc-online"><div class="online-dot"></div><span id="onlineText">Загрузка...</span></div>
+                        <div class="wc-online"><div class="online-dot"></div><span id="onlineText">-- участников онлайн</span></div>
                         <div class="wc-channels">
                             <div class="wc-ch"><div class="wc-ch-icon"><i class="fas fa-hashtag"></i></div>🔊 общий-чат</div>
                             <div class="wc-ch"><div class="wc-ch-icon"><i class="fas fa-hashtag"></i></div>🎮 поиск-команды</div>
@@ -556,8 +554,8 @@
         <div class="container">
             <div class="section-header fade-up"><h2>Наше <span class="text-gradient">сообщество</span></h2><p>Присоединяйся к тысячам игроков</p><div class="section-line"></div></div>
             <div class="community-grid stagger">
-                <div class="comm-card"><div class="comm-icon">👥</div><div class="comm-val" id="communityTotal">...</div><div class="comm-lbl">Участников</div></div>
-                <div class="comm-card"><div class="comm-icon">🎮</div><div class="comm-val" id="gamesCount">24</div><div class="comm-lbl">Игр</div></div>
+                <div class="comm-card"><div class="comm-icon">👥</div><div class="comm-val" id="communityTotal">--</div><div class="comm-lbl">Участников</div></div>
+                <div class="comm-card"><div class="comm-icon">🎮</div><div class="comm-val" id="gamesCount">0</div><div class="comm-lbl">Игр</div></div>
                 <div class="comm-card"><div class="comm-icon">💬</div><div class="comm-val">25+</div><div class="comm-lbl">Каналов</div></div>
                 <div class="comm-card"><div class="comm-icon">⭐</div><div class="comm-val" id="averageRating">4.9</div><div class="comm-lbl">Рейтинг</div></div>
             </div>
@@ -658,25 +656,28 @@
     </div>
 
     <script>
-        // ⚙️ КОНФИГУРАЦИЯ (заполнить свои данные)
+        // ⚙️ КОНФИГУРАЦИЯ – все ссылки на API уже вставлены
         const CONFIG = {
-            CLIENT_ID: '911925216421236776',                   
-            REDIRECT_URI: 'http://marazmus.apgsg.ru',          
-            API_BASE_URL: 'https://ваш-сервер.ru/api',         // нету добавте адрес вашего бэкенда с эндпоинтом /assign-role
-            FEEDBACK_WEBHOOK_URL: 'https://discord.com/api/webhooks/...', // нету добавте вебхук для уведомлений об отзывах
-            STATS_API: {
-                online: 'http://fi3.bot-hosting.net:20207/MARAZMUS?question=PIOnline',
-                total: 'http://fi3.bot-hosting.net:20207/MARAZMUS?question=PITotal',
-                inGame: 'http://fi3.bot-hosting.net:20207/MARAZMUS?question=PIInGame'
+            CLIENT_ID: '911925216421236776',
+            REDIRECT_URI: 'https://pon4ic984.github.io/APGsG/',   // Адрес вашего сайта
+            API_BASE_URL: 'https://441940.site.bot-hosting.net',   // Хост вашего бота (для assign-role)
+            API_STATS: {
+                online: 'https://441940.site.bot-hosting.net/MARAZMUS?question=PIOnline',
+                total: 'https://441940.site.bot-hosting.net/MARAZMUS?question=PITotal',
+                inGame: 'https://441940.site.bot-hosting.net/MARAZMUS?question=PIInGame',
+                roles: 'https://441940.site.bot-hosting.net/MARAZMUS?question=SendRoles'
             },
-            ADMIN_IDS: ['1033615399763320862', '665566492158590976']  // ID администраторов
+            FEEDBACK_WEBHOOK_URL: 'https://discord.com/api/webhooks/...', // 👈 ЗАМЕНИТЕ НА СВОЙ ВЕБХУК
+            ADMIN_IDS: ['1033615399763320862', '665566492158590976']
         };
 
         let currentUser = null;
         let currentGame = null;
         let comments = [];
         let discordCode = null;
+        let roleMap = {}; // Хранит соответствие gameId -> roleId
 
+        // --- Загрузка данных из localStorage ---
         function loadUserFromStorage() {
             const savedUser = localStorage.getItem('apgsg_user');
             if (savedUser) {
@@ -700,6 +701,7 @@
             updateAuthUI();
         }
 
+        // --- Авторизация ---
         function login() {
             const url = `https://discord.com/api/oauth2/authorize?client_id=${CONFIG.CLIENT_ID}&redirect_uri=${encodeURIComponent(CONFIG.REDIRECT_URI)}&response_type=code&scope=identify+guilds.join`;
             window.location.href = url;
@@ -775,6 +777,7 @@
             }
         }
 
+        // --- Звёзды рейтинга ---
         function initRatingStars() {
             const stars = document.querySelectorAll('.rating-input .star');
             const ratingValue = document.querySelector('.rating-value');
@@ -795,6 +798,7 @@
             document.querySelector('.rating-value').textContent = '0/5';
         }
 
+        // --- Комментарии (локальное хранилище) ---
         function loadComments() {
             const saved = localStorage.getItem('apgsg_comments');
             comments = saved ? JSON.parse(saved) : [
@@ -860,6 +864,7 @@
             });
         }
 
+        // --- Отправка отзыва ---
         document.getElementById('submitFeedback').addEventListener('click', async function(e) {
             e.preventDefault();
             if (!currentUser) {
@@ -911,6 +916,7 @@
             }
         });
 
+        // --- Админ-функции ---
         window.deleteComment = function(commentId) {
             if (!isAdmin()) return;
             comments = comments.filter(c => c.id !== commentId);
@@ -954,36 +960,45 @@
             document.getElementById('adminPanel').style.display = 'none';
         });
 
-        const FALLBACK_GAMES = [
-            { id: 'doom-eternal', name: 'Doom Eternal', image: 'https://cdn.akamai.steamstatic.com/steam/apps/782330/header.jpg', description: 'Doom Eternal — динамичный шутер от первого лица.' },
-            { id: 'terraria', name: 'Terraria', image: 'https://cdn.akamai.steamstatic.com/steam/apps/105600/header.jpg', description: 'Terraria — песочница с элементами RPG.' },
-            { id: 'factorio', name: 'Factorio', image: 'https://cdn.akamai.steamstatic.com/steam/apps/427520/header.jpg', description: 'Factorio — автоматизация и производство.' },
-            { id: 'among-us', name: 'Among Us', image: 'https://cdn.akamai.steamstatic.com/steam/apps/945360/header.jpg', description: 'Among Us — многопользовательская игра на дедукцию.' },
-            { id: 'barotruma', name: 'Barotruma', image: 'https://cdn.akamai.steamstatic.com/steam/apps/363970/header.jpg', description: 'Barotruma — симулятор подводной лодки.' },
-            { id: 'play-craft', name: 'Play Craft', image: 'https://via.placeholder.com/300x150?text=Play+Craft', description: 'Play Craft — креативная песочница.' },
-            { id: 'pubg', name: 'PUBG', image: 'https://cdn.akamai.steamstatic.com/steam/apps/578080/header.jpg', description: 'PUBG — королевская битва.' },
-            { id: 'brick-rigs', name: 'Brick Rigs', image: 'https://cdn.akamai.steamstatic.com/steam/apps/552100/header.jpg', description: 'Brick Rigs — физическая песочница.' },
-            { id: 'war-thunder', name: 'War Thunder', image: 'https://cdn.akamai.steamstatic.com/steam/apps/236390/header.jpg', description: 'War Thunder — военный симулятор.' },
-            { id: 'team-fortress-2', name: 'Team Fortress 2', image: 'https://cdn.akamai.steamstatic.com/steam/apps/440/header.jpg', description: 'Team Fortress 2 — командный шутер.' },
-            { id: 'raft', name: 'Raft', image: 'https://cdn.akamai.steamstatic.com/steam/apps/648800/header.jpg', description: 'Raft — выживание в океане.' },
-            { id: 'scp', name: 'SCP', image: 'https://cdn.akamai.steamstatic.com/steam/apps/700330/header.jpg', description: 'SCP — хоррор от первого лица.' },
-            { id: 'minecraft', name: 'Minecraft', image: 'https://cdn.akamai.steamstatic.com/steam/apps/1672970/header.jpg', description: 'Minecraft — песочница.' },
-            { id: 'space-engineers', name: 'Space Engineers', image: 'https://cdn.akamai.steamstatic.com/steam/apps/244850/header.jpg', description: 'Space Engineers — космический симулятор.' },
-            { id: 'lethal-company', name: 'Lethal Company', image: 'https://cdn.akamai.steamstatic.com/steam/apps/1966720/header.jpg', description: 'Lethal Company — кооперативный хоррор.' },
-            { id: 'garrys-mod', name: "Garry's Mod", image: 'https://cdn.akamai.steamstatic.com/steam/apps/4000/header.jpg', description: "Garry's Mod — физическая песочница." },
-            { id: 'gta', name: 'GTA', image: 'https://cdn.akamai.steamstatic.com/steam/apps/271590/header.jpg', description: 'Grand Theft Auto V — криминальный экшен.' },
-            { id: 'scrap-mechanic', name: 'Scrap Mechanic', image: 'https://cdn.akamai.steamstatic.com/steam/apps/387990/header.jpg', description: 'Scrap Mechanic — строительная игра.' },
-            { id: 'astroneer', name: 'ASTRONEER', image: 'https://cdn.akamai.steamstatic.com/steam/apps/361420/header.jpg', description: 'ASTRONEER — исследование планет.' },
-            { id: 'portal-2', name: 'Portal 2', image: 'https://cdn.akamai.steamstatic.com/steam/apps/620/header.jpg', description: 'Portal 2 — головоломка от первого лица.' },
-            { id: 'world-of-tanks', name: 'World of Tanks', image: 'https://cdn.akamai.steamstatic.com/steam/apps/1407200/header.jpg', description: 'World of Tanks — танковый симулятор.' },
-            { id: 'ksp', name: 'Kerbal Space Program', image: 'https://cdn.akamai.steamstatic.com/steam/apps/220200/header.jpg', description: 'Kerbal Space Program — космический симулятор.' },
-            { id: 'battlefield', name: 'Battlefield', image: 'https://cdn.akamai.steamstatic.com/steam/apps/1238810/header.jpg', description: 'Battlefield — серия военных шутеров.' },
-            { id: 'dont-starve-together', name: "Don't Starve Together", image: 'https://cdn.akamai.steamstatic.com/steam/apps/322330/header.jpg', description: "Don't Starve Together — кооперативное выживание." }
-        ];
+        // --- ПОЛУЧЕНИЕ ДАННЫХ С API ---
 
-        async function loadGames() {
-            renderGames(FALLBACK_GAMES);
-            document.getElementById('gamesCount').textContent = FALLBACK_GAMES.length;
+        // Загрузка списка игр и ролей с SendRoles
+        async function loadGamesFromAPI() {
+            const grid = document.getElementById('gamesGrid');
+            try {
+                const response = await fetch(CONFIG.API_STATS.roles);
+                if (!response.ok) throw new Error('Ошибка загрузки списка игр');
+                const text = await response.text();
+                const lines = text.split('\n').filter(line => line.trim() !== '');
+                const games = [];
+                lines.forEach(line => {
+                    const match = line.match(/^(\d+):\s*(.+)$/);
+                    if (match) {
+                        const roleId = match[1];
+                        const gameName = match[2].trim();
+                        // Создаём gameId из названия (нижний регистр, дефисы)
+                        const gameId = gameName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+                        roleMap[gameId] = roleId;
+                        games.push({
+                            id: gameId,
+                            name: gameName,
+                            image: `https://via.placeholder.com/300x150?text=${encodeURIComponent(gameName)}`,
+                            description: `${gameName} — игра на нашем сервере. Получи роль и играй с командой!`
+                        });
+                    }
+                });
+                renderGames(games);
+                document.getElementById('gamesCount').textContent = games.length;
+            } catch (err) {
+                console.error('Не удалось загрузить игры, использую резервный список', err);
+                // Резервный список на случай ошибки
+                const fallback = [
+                    { id: 'cs2', name: 'CS2', image: 'https://cdn.akamai.steamstatic.com/steam/apps/730/header.jpg', description: 'Counter-Strike 2 — тактический шутер.' },
+                    { id: 'dota2', name: 'Dota 2', image: 'https://cdn.akamai.steamstatic.com/steam/apps/570/header.jpg', description: 'Dota 2 — многопользовательская MOBA.' }
+                ];
+                renderGames(fallback);
+                document.getElementById('gamesCount').textContent = fallback.length;
+            }
         }
 
         function renderGames(games) {
@@ -1019,6 +1034,7 @@
             document.body.style.overflow = 'hidden';
         }
 
+        // --- Выдача роли ---
         document.getElementById('connectToGame').addEventListener('click', async function() {
             if (!currentGame) return;
             if (!discordCode && !currentUser) {
@@ -1066,79 +1082,48 @@
             }
         });
 
+        // --- ПОЛУЧЕНИЕ СТАТИСТИКИ ---
         async function fetchStats() {
             try {
                 const [onlineRes, totalRes, inGameRes] = await Promise.all([
-                    fetch(CONFIG.STATS_API.online),
-                    fetch(CONFIG.STATS_API.total),
-                    fetch(CONFIG.STATS_API.inGame)
+                    fetch(CONFIG.API_STATS.online),
+                    fetch(CONFIG.API_STATS.total),
+                    fetch(CONFIG.API_STATS.inGame)
                 ]);
                 const online = parseInt(await onlineRes.text());
                 const total = parseInt(await totalRes.text());
                 const inGame = parseInt(await inGameRes.text());
-                return {
-                    online: isNaN(online) ? 245 : online,
-                    total: isNaN(total) ? 833 : total,
-                    inGame: isNaN(inGame) ? 156 : inGame
-                };
-            } catch (err) {
-                return { online: 245, total: 833, inGame: 156 };
-            }
-        }
 
-        function animateNumber(el, target) {
-            if (!el) return;
-            const current = parseInt(el.textContent) || 0;
-            if (current === target) return;
-            const steps = 40;
-            const step = (target - current) / steps;
-            let frame = 0;
-            function tick() {
-                frame++;
-                if (frame >= steps) {
-                    el.textContent = target.toLocaleString('ru-RU');
-                    return;
-                }
-                el.textContent = Math.round(current + step * frame).toLocaleString('ru-RU');
-                requestAnimationFrame(tick);
-            }
-            tick();
-        }
+                document.getElementById('totalMembers').textContent = total;
+                document.getElementById('onlineMembers').textContent = online;
+                document.getElementById('gamingMembers').textContent = inGame;
+                document.getElementById('communityTotal').textContent = total;
+                document.getElementById('onlineText').textContent = online + ' участников онлайн';
 
-        function updateStats(stats) {
-            animateNumber(document.getElementById('totalMembers'), stats.total);
-            animateNumber(document.getElementById('onlineMembers'), stats.online);
-            animateNumber(document.getElementById('gamingMembers'), stats.inGame);
-            animateNumber(document.getElementById('communityTotal'), stats.total);
-            const onlineText = document.getElementById('onlineText');
-            if (onlineText) onlineText.textContent = stats.online + ' участников онлайн';
-            const activity = document.getElementById('serverActivity');
-            if (activity) {
-                if (stats.online > 200) {
-                    activity.textContent = '🔥 Очень высокая';
-                    activity.style.background = 'rgba(0,245,212,0.1)';
-                    activity.style.color = '#00F5D4';
-                } else if (stats.online > 100) {
-                    activity.textContent = '⚡ Высокая';
-                    activity.style.background = 'rgba(0,245,212,0.1)';
-                    activity.style.color = '#00F5D4';
-                } else if (stats.online > 50) {
-                    activity.textContent = '📊 Средняя';
-                    activity.style.background = 'rgba(255,200,0,0.1)';
-                    activity.style.color = '#FFC800';
+                const activityEl = document.getElementById('serverActivity');
+                if (online > 200) {
+                    activityEl.textContent = '🔥 Очень высокая';
+                    activityEl.style.background = 'rgba(0,245,212,0.1)';
+                    activityEl.style.color = '#00F5D4';
+                } else if (online > 100) {
+                    activityEl.textContent = '⚡ Высокая';
+                    activityEl.style.background = 'rgba(0,245,212,0.1)';
+                    activityEl.style.color = '#00F5D4';
+                } else if (online > 50) {
+                    activityEl.textContent = '📊 Средняя';
+                    activityEl.style.background = 'rgba(255,200,0,0.1)';
+                    activityEl.style.color = '#FFC800';
                 } else {
-                    activity.textContent = '💤 Низкая';
-                    activity.style.background = 'rgba(255,0,110,0.1)';
-                    activity.style.color = '#FF006E';
+                    activityEl.textContent = '💤 Низкая';
+                    activityEl.style.background = 'rgba(255,0,110,0.1)';
+                    activityEl.style.color = '#FF006E';
                 }
+            } catch (err) {
+                console.warn('Не удалось получить статистику', err);
             }
         }
 
-        function initStats() {
-            fetchStats().then(updateStats);
-            setInterval(() => fetchStats().then(updateStats), 30000);
-        }
-
+        // --- Вспомогательные функции ---
         function showNotif(title, text) {
             const n = document.getElementById('notification');
             n.querySelector('h4').textContent = title;
@@ -1147,6 +1132,7 @@
             setTimeout(() => n.classList.remove('active'), 5000);
         }
 
+        // --- Инициализация ---
         function initGameSearch() {
             document.getElementById('gameSearch').addEventListener('input', function(e) {
                 const q = e.target.value.toLowerCase();
@@ -1263,6 +1249,7 @@
             });
         }
 
+        // --- ЗАПУСК ---
         window.addEventListener('load', function() {
             initHeader();
             initMobileMenu();
@@ -1272,13 +1259,14 @@
             initScrollTop();
             initSmoothScroll();
             initInfoTabs();
-            initStats();
             initGameSearch();
             initRandomTeam();
             initRatingStars();
-            loadGames();
             loadComments();
             loadUserFromStorage();
+            loadGamesFromAPI(); // Загружаем игры с API
+            fetchStats();       // Загружаем статистику
+            setInterval(fetchStats, 60000); // Обновляем каждую минуту
 
             document.getElementById('popupClose').addEventListener('click', () => {
                 document.getElementById('gamePopup').classList.remove('active');
