@@ -658,16 +658,16 @@
     </div>
 
     <script>
-        // ⚙️ КОНФИГУРАЦИЯ (заполните свои данные)
+        // ⚙️ КОНФИГУРАЦИЯ (всё настроено для вашего сайта)
         const CONFIG = {
             CLIENT_ID: '911925216421236776',
-            REDIRECT_URI: 'http://marazmus.apgsg.ru',   // Адрес вашего сайта
+            REDIRECT_URI: 'https://pon4ic984.github.io/APGsG/',   // ТОЧНЫЙ АДРЕС САЙТА
             API_BASE_URL: 'https://441940.site.bot-hosting.net',   // Хост вашего бота (для assign-role)
             FEEDBACK_WEBHOOK_URL: 'https://discord.com/api/webhooks/...', // 👈 ЗАМЕНИТЕ НА СВОЙ ВЕБХУК
             ADMIN_IDS: ['1033615399763320862', '665566492158590976']
         };
 
-        // Полный список игр (как было раньше)
+        // Полный список игр
         const FALLBACK_GAMES = [
             { id: 'doom-eternal', name: 'Doom Eternal', image: 'https://cdn.akamai.steamstatic.com/steam/apps/782330/header.jpg', description: 'Doom Eternal — динамичный шутер от первого лица.' },
             { id: 'terraria', name: 'Terraria', image: 'https://cdn.akamai.steamstatic.com/steam/apps/105600/header.jpg', description: 'Terraria — песочница с элементами RPG.' },
@@ -700,7 +700,7 @@
         let comments = [];
         let discordCode = null;
 
-        // Загрузка пользователя из localStorage
+        // --- Загрузка пользователя из localStorage ---
         function loadUserFromStorage() {
             const savedUser = localStorage.getItem('apgsg_user');
             if (savedUser) {
@@ -724,7 +724,7 @@
             updateAuthUI();
         }
 
-        // Авторизация
+        // --- Авторизация ---
         function login() {
             const url = `https://discord.com/api/oauth2/authorize?client_id=${CONFIG.CLIENT_ID}&redirect_uri=${encodeURIComponent(CONFIG.REDIRECT_URI)}&response_type=code&scope=identify+guilds.join`;
             window.location.href = url;
@@ -800,7 +800,7 @@
             }
         }
 
-        // Звёзды рейтинга
+        // --- Звёзды рейтинга ---
         function initRatingStars() {
             const stars = document.querySelectorAll('.rating-input .star');
             const ratingValue = document.querySelector('.rating-value');
@@ -821,7 +821,7 @@
             document.querySelector('.rating-value').textContent = '0/5';
         }
 
-        // Комментарии
+        // --- Комментарии ---
         function loadComments() {
             const saved = localStorage.getItem('apgsg_comments');
             comments = saved ? JSON.parse(saved) : [
@@ -981,7 +981,7 @@
             document.getElementById('adminPanel').style.display = 'none';
         });
 
-        // Загрузка игр из FALLBACK_GAMES
+        // --- Загрузка игр из FALLBACK_GAMES ---
         function loadGames() {
             const grid = document.getElementById('gamesGrid');
             grid.innerHTML = '';
@@ -1016,7 +1016,7 @@
             document.body.style.overflow = 'hidden';
         }
 
-        // Выдача роли (отправка запроса на бэкенд)
+        // --- Выдача роли ---
         document.getElementById('connectToGame').addEventListener('click', async function() {
             if (!currentGame) return;
             if (!discordCode && !currentUser) {
@@ -1072,7 +1072,7 @@
             setTimeout(() => n.classList.remove('active'), 5000);
         }
 
-        // Поиск игр
+        // --- Поиск игр ---
         function initGameSearch() {
             document.getElementById('gameSearch').addEventListener('input', function(e) {
                 const q = e.target.value.toLowerCase();
@@ -1083,7 +1083,7 @@
             });
         }
 
-        // Случайная игра
+        // --- Случайная игра ---
         function initRandomTeam() {
             document.getElementById('randomTeamBtn').addEventListener('click', function() {
                 const cards = document.querySelectorAll('.game-card');
@@ -1091,7 +1091,7 @@
             });
         }
 
-        // Мобильное меню
+        // --- Мобильное меню ---
         function initMobileMenu() {
             const toggle = document.getElementById('mobileToggle');
             const nav = document.getElementById('navLinks');
@@ -1191,7 +1191,7 @@
             });
         }
 
-        // Запуск при загрузке
+        // --- Запуск ---
         window.addEventListener('load', function() {
             initHeader();
             initMobileMenu();
@@ -1206,7 +1206,7 @@
             initRatingStars();
             loadComments();
             loadUserFromStorage();
-            loadGames(); // Загружаем игры из FALLBACK_GAMES
+            loadGames();
 
             document.getElementById('popupClose').addEventListener('click', () => {
                 document.getElementById('gamePopup').classList.remove('active');
