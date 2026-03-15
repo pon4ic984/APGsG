@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="icon" type="image/x-icon" href="https://i.ibb.co/2YmkKV7G/source-v2.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <meta name="description" content="APGsG — Discord сервер для поиска тиммейтов в CS2, Dota 2, Valorant, Apex Legends и другие игры.">
+    <meta name="keywords" content="APGsG, Discord, поиск тиммейтов, найти команду, CS2, Dota 2, Valorant">
     <style>
         /* ========== СБРОС И ПЕРЕМЕННЫЕ ========== */
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -546,9 +548,7 @@
     <section id="games" class="section">
         <div class="container">
             <div class="section-header fade-up"><h2>Поддерживаемые <span class="text-gradient">игры</span></h2><p>Найди команду для своих любимых игр</p><div class="section-line"></div></div>
-            <div class="games-grid stagger" id="gamesGrid">
-                <!-- Список игр будет вставлен через JS -->
-            </div>
+            <div class="games-grid stagger" id="gamesGrid"></div>
         </div>
     </section>
 
@@ -658,41 +658,41 @@
     </div>
 
     <script>
-        // ⚙️ КОНФИГУРАЦИЯ (всё настроено для вашего сайта)
+        // ⚙️ КОНФИГУРАЦИЯ
         const CONFIG = {
             CLIENT_ID: '911925216421236776',
-            REDIRECT_URI: 'https://pon4ic984.github.io/APGsG/',   // ТОЧНЫЙ АДРЕС САЙТА
-            API_BASE_URL: 'https://441940.site.bot-hosting.net',   // Хост вашего бота (для assign-role)
-            FEEDBACK_WEBHOOK_URL: 'https://discord.com/api/webhooks/...', // 👈 ЗАМЕНИТЕ НА СВОЙ ВЕБХУК
+            REDIRECT_URI: 'https://pon4ic984.github.io/APGsG/',
+            API_BASE_URL: 'http://441940.site.bot-hosting.net',
+            FEEDBACK_WEBHOOK_URL: 'https://discord.com/api/webhooks/...', // ЗАМЕНИТЕ НА СВОЙ
             ADMIN_IDS: ['1033615399763320862', '665566492158590976']
         };
 
-        // Полный список игр
-        const FALLBACK_GAMES = [
-            { id: 'doom-eternal', name: 'Doom Eternal', image: 'https://cdn.akamai.steamstatic.com/steam/apps/782330/header.jpg', description: 'Doom Eternal — динамичный шутер от первого лица.' },
-            { id: 'terraria', name: 'Terraria', image: 'https://cdn.akamai.steamstatic.com/steam/apps/105600/header.jpg', description: 'Terraria — песочница с элементами RPG.' },
-            { id: 'factorio', name: 'Factorio', image: 'https://cdn.akamai.steamstatic.com/steam/apps/427520/header.jpg', description: 'Factorio — автоматизация и производство.' },
-            { id: 'among-us', name: 'Among Us', image: 'https://cdn.akamai.steamstatic.com/steam/apps/945360/header.jpg', description: 'Among Us — многопользовательская игра на дедукцию.' },
-            { id: 'barotruma', name: 'Barotruma', image: 'https://cdn.akamai.steamstatic.com/steam/apps/363970/header.jpg', description: 'Barotruma — симулятор подводной лодки.' },
-            { id: 'play-craft', name: 'Play Craft', image: 'https://via.placeholder.com/300x150?text=Play+Craft', description: 'Play Craft — креативная песочница.' },
-            { id: 'pubg', name: 'PUBG', image: 'https://cdn.akamai.steamstatic.com/steam/apps/578080/header.jpg', description: 'PUBG — королевская битва.' },
-            { id: 'brick-rigs', name: 'Brick Rigs', image: 'https://cdn.akamai.steamstatic.com/steam/apps/552100/header.jpg', description: 'Brick Rigs — физическая песочница.' },
-            { id: 'war-thunder', name: 'War Thunder', image: 'https://cdn.akamai.steamstatic.com/steam/apps/236390/header.jpg', description: 'War Thunder — военный симулятор.' },
-            { id: 'team-fortress-2', name: 'Team Fortress 2', image: 'https://cdn.akamai.steamstatic.com/steam/apps/440/header.jpg', description: 'Team Fortress 2 — командный шутер.' },
-            { id: 'raft', name: 'Raft', image: 'https://cdn.akamai.steamstatic.com/steam/apps/648800/header.jpg', description: 'Raft — выживание в океане.' },
-            { id: 'scp', name: 'SCP', image: 'https://cdn.akamai.steamstatic.com/steam/apps/700330/header.jpg', description: 'SCP — хоррор от первого лица.' },
-            { id: 'minecraft', name: 'Minecraft', image: 'https://cdn.akamai.steamstatic.com/steam/apps/1672970/header.jpg', description: 'Minecraft — песочница.' },
-            { id: 'space-engineers', name: 'Space Engineers', image: 'https://cdn.akamai.steamstatic.com/steam/apps/244850/header.jpg', description: 'Space Engineers — космический симулятор.' },
-            { id: 'lethal-company', name: 'Lethal Company', image: 'https://cdn.akamai.steamstatic.com/steam/apps/1966720/header.jpg', description: 'Lethal Company — кооперативный хоррор.' },
-            { id: 'garrys-mod', name: "Garry's Mod", image: 'https://cdn.akamai.steamstatic.com/steam/apps/4000/header.jpg', description: "Garry's Mod — физическая песочница." },
-            { id: 'gta', name: 'GTA', image: 'https://cdn.akamai.steamstatic.com/steam/apps/271590/header.jpg', description: 'Grand Theft Auto V — криминальный экшен.' },
-            { id: 'scrap-mechanic', name: 'Scrap Mechanic', image: 'https://cdn.akamai.steamstatic.com/steam/apps/387990/header.jpg', description: 'Scrap Mechanic — строительная игра.' },
-            { id: 'astroneer', name: 'ASTRONEER', image: 'https://cdn.akamai.steamstatic.com/steam/apps/361420/header.jpg', description: 'ASTRONEER — исследование планет.' },
-            { id: 'portal-2', name: 'Portal 2', image: 'https://cdn.akamai.steamstatic.com/steam/apps/620/header.jpg', description: 'Portal 2 — головоломка от первого лица.' },
-            { id: 'world-of-tanks', name: 'World of Tanks', image: 'https://cdn.akamai.steamstatic.com/steam/apps/1407200/header.jpg', description: 'World of Tanks — танковый симулятор.' },
-            { id: 'ksp', name: 'Kerbal Space Program', image: 'https://cdn.akamai.steamstatic.com/steam/apps/220200/header.jpg', description: 'Kerbal Space Program — космический симулятор.' },
-            { id: 'battlefield', name: 'Battlefield', image: 'https://cdn.akamai.steamstatic.com/steam/apps/1238810/header.jpg', description: 'Battlefield — серия военных шутеров.' },
-            { id: 'dont-starve-together', name: "Don't Starve Together", image: 'https://cdn.akamai.steamstatic.com/steam/apps/322330/header.jpg', description: "Don't Starve Together — кооперативное выживание." }
+        // Массив игр с правильными roleId (ID ролей из вашего API)
+        const GAMES = [
+            { id: '898661883144437791', name: 'Doom Eternal', image: 'https://cdn.akamai.steamstatic.com/steam/apps/782330/header.jpg', description: 'Doom Eternal — динамичный шутер от первого лица.' },
+            { id: '898890418857594881', name: 'Terraria', image: 'https://cdn.akamai.steamstatic.com/steam/apps/105600/header.jpg', description: 'Terraria — песочница с элементами RPG.' },
+            { id: '1237465505904988322', name: 'Factorio', image: 'https://cdn.akamai.steamstatic.com/steam/apps/427520/header.jpg', description: 'Factorio — автоматизация и производство.' },
+            { id: '943054984952553522', name: 'Among Us', image: 'https://cdn.akamai.steamstatic.com/steam/apps/945360/header.jpg', description: 'Among Us — многопользовательская игра на дедукцию.' },
+            { id: '1002538533057208431', name: 'Barotruma', image: 'https://cdn.akamai.steamstatic.com/steam/apps/363970/header.jpg', description: 'Barotruma — симулятор подводной лодки.' },
+            { id: '898513787727003679', name: 'Play Craft', image: 'https://via.placeholder.com/300x150?text=Play+Craft', description: 'Play Craft — креативная песочница.' },
+            { id: '937301918450065428', name: 'PUBG', image: 'https://cdn.akamai.steamstatic.com/steam/apps/578080/header.jpg', description: 'PUBG — королевская битва.' },
+            { id: '898512495629713429', name: 'Brick Rigs', image: 'https://cdn.akamai.steamstatic.com/steam/apps/552100/header.jpg', description: 'Brick Rigs — физическая песочница.' },
+            { id: '1237465330851254332', name: 'War Thunder', image: 'https://cdn.akamai.steamstatic.com/steam/apps/236390/header.jpg', description: 'War Thunder — военный симулятор.' },
+            { id: '898512024571629599', name: 'Team Fortress 2', image: 'https://cdn.akamai.steamstatic.com/steam/apps/440/header.jpg', description: 'Team Fortress 2 — командный шутер.' },
+            { id: '860954302159257630', name: 'Raft', image: 'https://cdn.akamai.steamstatic.com/steam/apps/648800/header.jpg', description: 'Raft — выживание в океане.' },
+            { id: '906461899011534868', name: 'SCP', image: 'https://cdn.akamai.steamstatic.com/steam/apps/700330/header.jpg', description: 'SCP — хоррор от первого лица.' },
+            { id: '898512315555651605', name: 'Minecraft', image: 'https://cdn.akamai.steamstatic.com/steam/apps/1672970/header.jpg', description: 'Minecraft — песочница.' },
+            { id: '975440503933898832', name: 'Space Engineers', image: 'https://cdn.akamai.steamstatic.com/steam/apps/244850/header.jpg', description: 'Space Engineers — космический симулятор.' },
+            { id: '1237465410345898047', name: 'Lethal Company', image: 'https://cdn.akamai.steamstatic.com/steam/apps/1966720/header.jpg', description: 'Lethal Company — кооперативный хоррор.' },
+            { id: '898512036038840350', name: "Garry's Mod", image: 'https://cdn.akamai.steamstatic.com/steam/apps/4000/header.jpg', description: "Garry's Mod — физическая песочница." },
+            { id: '898511419505541191', name: 'GTA', image: 'https://cdn.akamai.steamstatic.com/steam/apps/271590/header.jpg', description: 'Grand Theft Auto V — криминальный экшен.' },
+            { id: '860952845213237258', name: 'Scrap Mechanic', image: 'https://cdn.akamai.steamstatic.com/steam/apps/387990/header.jpg', description: 'Scrap Mechanic — строительная игра.' },
+            { id: '860953759186550825', name: 'ASTRONEER', image: 'https://cdn.akamai.steamstatic.com/steam/apps/361420/header.jpg', description: 'ASTRONEER — исследование планет.' },
+            { id: '898511433933930517', name: 'Portal 2', image: 'https://cdn.akamai.steamstatic.com/steam/apps/620/header.jpg', description: 'Portal 2 — головоломка от первого лица.' },
+            { id: '937301734177529917', name: 'World of Tanks', image: 'https://cdn.akamai.steamstatic.com/steam/apps/1407200/header.jpg', description: 'World of Tanks — танковый симулятор.' },
+            { id: '935520236906639360', name: 'Kerbal Space Program', image: 'https://cdn.akamai.steamstatic.com/steam/apps/220200/header.jpg', description: 'Kerbal Space Program — космический симулятор.' },
+            { id: '898890267522920469', name: 'Battlefield', image: 'https://cdn.akamai.steamstatic.com/steam/apps/1238810/header.jpg', description: 'Battlefield — серия военных шутеров.' },
+            { id: '997082551615230036', name: "Don't Starve Together", image: 'https://cdn.akamai.steamstatic.com/steam/apps/322330/header.jpg', description: "Don't Starve Together — кооперативное выживание." }
         ];
 
         let currentUser = null;
@@ -700,7 +700,7 @@
         let comments = [];
         let discordCode = null;
 
-        // --- Загрузка пользователя из localStorage ---
+        // Загрузка из localStorage
         function loadUserFromStorage() {
             const savedUser = localStorage.getItem('apgsg_user');
             if (savedUser) {
@@ -720,11 +720,11 @@
                 discordCode = code;
                 localStorage.setItem('discord_code', code);
                 window.history.replaceState({}, document.title, window.location.pathname);
+                // Здесь можно было бы получить данные пользователя, если бэкенд поддерживает
             }
             updateAuthUI();
         }
 
-        // --- Авторизация ---
         function login() {
             const url = `https://discord.com/api/oauth2/authorize?client_id=${CONFIG.CLIENT_ID}&redirect_uri=${encodeURIComponent(CONFIG.REDIRECT_URI)}&response_type=code&scope=identify+guilds.join`;
             window.location.href = url;
@@ -753,7 +753,7 @@
             if (currentUser) {
                 authSection.innerHTML = `
                     <div class="user-info" style="display:flex; align-items:center; gap:8px;">
-                        <img src="https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar || 'null'}.png" alt="avatar" style="width:28px; height:28px; border-radius:50%;" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
+                        <img src="https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png" alt="avatar" style="width:28px; height:28px; border-radius:50%;" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
                         <span>${currentUser.username}</span>
                         <button class="btn-logout" id="logoutBtn" style="background:rgba(255,255,255,0.1); border:1px solid var(--dark-border); color:var(--text-secondary); padding:6px 12px; border-radius:var(--radius-sm); cursor:pointer;">Выйти</button>
                     </div>
@@ -821,7 +821,7 @@
             document.querySelector('.rating-value').textContent = '0/5';
         }
 
-        // --- Комментарии ---
+        // --- Комментарии (локальное хранилище) ---
         function loadComments() {
             const saved = localStorage.getItem('apgsg_comments');
             comments = saved ? JSON.parse(saved) : [
@@ -981,11 +981,11 @@
             document.getElementById('adminPanel').style.display = 'none';
         });
 
-        // --- Загрузка игр из FALLBACK_GAMES ---
+        // --- Загрузка игр ---
         function loadGames() {
             const grid = document.getElementById('gamesGrid');
             grid.innerHTML = '';
-            FALLBACK_GAMES.forEach(game => {
+            GAMES.forEach(game => {
                 const card = document.createElement('div');
                 card.className = 'game-card';
                 card.dataset.game = game.id;
@@ -999,7 +999,7 @@
                 card.addEventListener('click', () => openGamePopup(game));
                 grid.appendChild(card);
             });
-            document.getElementById('gamesCount').textContent = FALLBACK_GAMES.length;
+            document.getElementById('gamesCount').textContent = GAMES.length;
         }
 
         function openGamePopup(game) {
@@ -1016,44 +1016,40 @@
             document.body.style.overflow = 'hidden';
         }
 
-        // --- Выдача роли ---
+        // --- ВЫДАЧА РОЛИ (рабочий код под ваш бэкенд) ---
         document.getElementById('connectToGame').addEventListener('click', async function() {
             if (!currentGame) return;
-            if (!discordCode && !currentUser) {
+
+            if (!discordCode) {
                 showNotif('🔒 Требуется вход', 'Сначала авторизуйтесь через Discord');
                 login();
                 return;
             }
+
             const btn = this;
             const original = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Подключение...';
             btn.disabled = true;
 
             try {
-                const body = currentUser
-                    ? { userId: currentUser.id, gameId: currentGame.id }
-                    : { code: discordCode, gameId: currentGame.id };
-
-                const response = await fetch(`${CONFIG.API_BASE_URL}/assign-role`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.user) {
-                        currentUser = data.user;
-                        localStorage.setItem('apgsg_user', JSON.stringify(data.user));
-                        localStorage.removeItem('discord_code');
-                        discordCode = null;
-                    }
+                const roleId = currentGame.id; // ID роли
+                const url = `${CONFIG.API_BASE_URL}/MARAZMUS?question=addRole&role=${roleId}&oAuth2code=${discordCode}`;
+                
+                const response = await fetch(url);
+                const text = await response.text();
+                
+                if (text.includes('Request acknowledged')) {
                     showNotif('✅ Роль выдана!', `Теперь у вас есть роль для ${currentGame.name}. Добро пожаловать!`);
                     document.getElementById('gamePopup').classList.remove('active');
                     document.body.style.overflow = '';
-                    updateAuthUI();
+                    
+                    // Очищаем код, так как он уже использован
+                    localStorage.removeItem('discord_code');
+                    discordCode = null;
+                    
+                    // Можно было бы обновить UI, чтобы показать, что роль получена
                 } else {
-                    const error = await response.text();
-                    throw new Error(error);
+                    throw new Error('Неожиданный ответ от сервера');
                 }
             } catch (err) {
                 console.error(err);
