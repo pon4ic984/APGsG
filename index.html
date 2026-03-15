@@ -1035,21 +1035,44 @@
             const response = await fetch(url);
             const text = await response.text();
 
-            if (response.ok && text.trim().toLowerCase().includes('request acknowledged')) {
-                if (!refreshCode && discordCode && text.length > 0) {
-                    // Пытаемся извлечь refreshCode из ответа (сервер возвращает его как строку)
-                    const possibleCode = text.trim();
-                    if (possibleCode && !possibleCode.toLowerCase().includes('request acknowledged')) {
-                        refreshCode = possibleCode;
+            if (response.ok) {
+                // Пытаемся распарсить JSON
+                let data = null;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    // не JSON – просто строка
+                }
+
+                if (data && typeof data === 'object') {
+                    // Если есть refreshCode в данных
+                    if (data.refreshCode) {
+                        refreshCode = data.refreshCode;
+                        localStorage.setItem('apgsg_refresh', refreshCode);
+                        if (data.user) {
+                            currentUser = data.user;
+                            localStorage.setItem('apgsg_user', JSON.stringify(currentUser));
+                        }
+                        // Очищаем старый код
+                        if (discordCode) {
+                            localStorage.removeItem('discord_code');
+                            discordCode = null;
+                        }
+                    }
+                    // Если есть статус успеха – считаем успехом
+                } else {
+                    // Простая строка – возможно, это refreshCode (как в примере)
+                    if (!refreshCode && discordCode && text.length > 0 && !text.toLowerCase().includes('request acknowledged')) {
+                        refreshCode = text.trim();
                         localStorage.setItem('apgsg_refresh', refreshCode);
                         localStorage.removeItem('discord_code');
                         discordCode = null;
-                    } else {
-                        console.warn('Не удалось извлечь refreshCode из ответа:', text);
                     }
                 }
+
                 return true;
             } else {
+                // Обработка ошибок
                 if (response.status === 400 || response.status === 500 || text.includes('invalid')) {
                     showNotif('❌ Сессия истекла', 'Пожалуйста, войдите заново');
                     logout();
