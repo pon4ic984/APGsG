@@ -14,7 +14,7 @@
     <link rel="manifest" href="/site.webmanifest" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        /* все стили остаются без изменений */
+        /* все стили остаются без изменений (как в исходном коде) */
         *,
         *::before,
         *::after {
@@ -1408,6 +1408,7 @@
                 login();
             }
 
+            // ИСПРАВЛЕННАЯ ФУНКЦИЯ ЗАГРУЗКИ ОТЗЫВОВ
             async function fetchReviews() {
                 try {
                     let url = API.getReviews;
@@ -1418,29 +1419,64 @@
                     if (!response.ok) throw new Error(`Ошибка загрузки отзывов: ${response.status}`);
                     const data = await response.json();
 
+                    // Обновление токена, если он есть в ответе (на том же уровне, что и данные)
                     if (data && data.token) {
                         token = data.token;
                         localStorage.setItem('apgsg_token', token);
                     }
 
                     let reviewsArray = [];
+                    // Если ответ — массив, то это может быть список отзывов,
+                    // причём последний элемент может содержать токен (проверим)
                     if (Array.isArray(data)) {
-                        reviewsArray = data;
+                        // Пройдём по массиву, соберём отзывы, а если встретится объект с полем token — извлечём его
+                        reviewsArray = data.filter(item => !item.token); // все элементы без поля token — отзывы
+                        const tokenObj = data.find(item => item.token);
+                        if (tokenObj && tokenObj.token) {
+                            token = tokenObj.token;
+                            localStorage.setItem('apgsg_token', token);
+                        }
                     } else if (data && typeof data === 'object') {
+                        // Если ответ — объект, ищем поля reviews / comments / data
                         reviewsArray = data.reviews || data.comments || data.data || [];
+                        // токен уже могли получить выше
                     }
 
+                    // Преобразуем каждый отзыв в единый формат
                     comments = reviewsArray.map((item, index) => {
+                        // Пытаемся найти ID отзыва (нужен для удаления/оценки)
+                        const id = extractField(item, ['reviewId', 'reviewID', 'id', 'commentId']) || `temp-${index}`;
+                        const userId = extractField(item, ['authorID', 'authorId', 'userId', 'userID']) || 'unknown';
+                        const userName = extractField(item, ['authorName', 'userName', 'username', 'author']) || 'Аноним';
+                        const rating = extractField(item, ['rating']) || 5;
+                        // Текст отзыва: ищем reviewText или comment
+                        const comment = extractField(item, ['reviewText', 'comment', 'text', 'message']) || '';
+                        // Дата: может быть timestamp (число) или строка
+                        let date = extractField(item, ['timestamp', 'date', 'createdAt', 'time']);
+                        if (typeof date === 'number') {
+                            date = new Date(date).toLocaleString();
+                        } else if (!date) {
+                            date = new Date().toLocaleString();
+                        }
+                        // Лайки/дизлайки (пока не используются, но сохраним)
+                        const likes = extractField(item, ['likes']) || 0;
+                        const dislikes = extractField(item, ['dislikes']) || 0;
+                        // Оценка текущего пользователя (myRating) может быть в ответе
+                        const myRating = extractField(item, ['myRating']) || 'none';
+
                         return {
-                            id: extractField(item, ['id', 'reviewId', 'commentId']) || `temp-${index}`,
-                            userId: extractField(item, ['userId', 'userID', 'authorId', 'id']) || 'unknown',
-                            userName: extractField(item, ['userName', 'username', 'author', 'name']) || 'Аноним',
-                            rating: extractField(item, ['rating', 'score', 'stars']) || 5,
-                            comment: extractField(item, ['comment', 'text', 'message', 'content']) || '',
-                            date: extractField(item, ['date', 'createdAt', 'timestamp', 'time']) || new Date().toLocaleString(),
-                            myRating: extractField(item, ['myRating']) || 'none'
+                            id,
+                            userId,
+                            userName,
+                            rating,
+                            comment,
+                            date,
+                            likes,
+                            dislikes,
+                            myRating
                         };
                     });
+
                     renderComments();
                     updateAverageRating();
                 } catch (err) {
