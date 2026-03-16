@@ -14,7 +14,6 @@
     <link rel="manifest" href="/site.webmanifest" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        /* ---------- Все стили полностью из исходного файла v1pp.html ---------- */
         *,
         *::before,
         *::after {
@@ -2079,6 +2078,7 @@
             let selectedGames = new Set();
             let comments = [];
 
+            // ---------- Загрузка из localStorage ----------
             function loadFromStorage() {
                 const savedUser = localStorage.getItem('apgsg_user');
                 if (savedUser) {
@@ -2107,12 +2107,15 @@
                 updateAuthUI();
             }
 
+            // ---------- Авторизация по коду ----------
             async function authorizeWithCode(code) {
                 try {
                     const response = await fetch(`${API.authorize}&oAuth2code=${code}`);
-                    if (!response.ok) throw new Error('Ошибка авторизации');
+                    if (!response.ok) throw new Error(`Ошибка авторизации: ${response.status}`);
                     const data = await response.json();
-                    if (data.token && data.userID) {
+                    console.log('Ответ authorize:', data);
+                    // Ожидаем поля: username, userID, token
+                    if (data.token && data.userID && data.username) {
                         token = data.token;
                         currentUser = {
                             id: data.userID,
@@ -2126,7 +2129,8 @@
                         showNotif('✅ Успешный вход', `Привет, ${data.username}!`);
                         updateAuthUI();
                     } else {
-                        throw new Error('Некорректный ответ сервера');
+                        console.warn('Неожиданный ответ сервера:', data);
+                        showNotif('❌ Ошибка', 'Некорректный ответ сервера');
                     }
                 } catch (err) {
                     console.error(err);
@@ -2211,6 +2215,7 @@
                 }
             }
 
+            // ---------- Получение статистики ----------
             async function fetchStats() {
                 try {
                     const [onlineRes, totalRes, inGameRes] = await Promise.all([
@@ -2251,6 +2256,7 @@
                 }
             }
 
+            // ---------- Получение списка игр ----------
             async function fetchGames() {
                 try {
                     const response = await fetch(API.roles);
@@ -2371,6 +2377,7 @@
                 document.getElementById('bulkAssignBtn').disabled = count === 0;
             }
 
+            // ---------- Выдача одной роли ----------
             async function assignSingleRole(roleId) {
                 if (!token) {
                     showNotif('🔒 Требуется вход', 'Сначала авторизуйтесь через Discord');
@@ -2379,11 +2386,12 @@
                 const url = `${API.addRole2}&role=${roleId}&token=${token}`;
                 const response = await fetch(url);
                 const text = await response.text();
+                console.log('Ответ addRole2 (одиночная):', text);
 
                 if (response.ok) {
                     try {
                         const data = JSON.parse(text);
-                        if (data.token) {
+                        if (data && data.token) {
                             token = data.token;
                             localStorage.setItem('apgsg_token', token);
                         }
@@ -2401,6 +2409,7 @@
                 }
             }
 
+            // ---------- Массовая выдача ----------
             async function assignMultipleRoles(roleIds) {
                 if (!token) {
                     showNotif('❌ Ошибка', 'Нет токена для массовой выдачи');
@@ -2410,11 +2419,12 @@
                 const url = `${API.addRole2}&role=${rolesStr}&token=${token}`;
                 const response = await fetch(url);
                 const text = await response.text();
+                console.log('Ответ addRole2 (массовая):', text);
 
                 if (response.ok) {
                     try {
                         const data = JSON.parse(text);
-                        if (data.token) {
+                        if (data && data.token) {
                             token = data.token;
                             localStorage.setItem('apgsg_token', token);
                         }
@@ -2485,47 +2495,66 @@
                 login();
             }
 
+            // ---------- Загрузка отзывов ----------
             async function fetchReviews() {
                 try {
                     const response = await fetch(API.getReviews);
-                    if (!response.ok) throw new Error('Ошибка загрузки отзывов');
+                    if (!response.ok) throw new Error(`Ошибка загрузки отзывов: ${response.status}`);
                     const data = await response.json();
-                    comments = data.map((item, index) => ({
-                        id: item.id || index,
-                        userId: item.userId || 'unknown',
-                        userName: item.userName || 'Аноним',
-                        rating: item.rating || 5,
-                        comment: item.comment || '',
-                        date: item.date || new Date().toLocaleString(),
-                        banned: false
-                    }));
+                    console.log('Ответ getReviews:', data);
+
+                    let reviewsArray = Array.isArray(data) ? data : (data.reviews || data.comments || []);
+                    comments = reviewsArray.map((item, index) => {
+                        return {
+                            id: item.id || index,
+                            userId: item.userId || item.userID || item.authorId || 'unknown',
+                            userName: item.userName || item.username || item.author || 'Аноним',
+                            rating: item.rating || 5,
+                            comment: item.comment || item.text || item.message || '',
+                            date: item.date || item.createdAt || new Date().toLocaleString(),
+                            banned: false
+                        };
+                    });
                     renderComments();
                     updateAverageRating();
                 } catch (err) {
                     console.error('Ошибка загрузки отзывов:', err);
+                    comments = [];
+                    renderComments();
                 }
             }
 
+            // ---------- Отправка отзыва ----------
             async function submitReview(rating, text) {
                 if (!token) {
                     showNotif('🔒 Требуется вход', 'Войдите через Discord');
                     return false;
                 }
                 try {
+                    const body = JSON.stringify({ comment: text });
                     const response = await fetch(`${API.sendReview}&token=${token}&rating=${rating}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ comment: text })
+                        body: body
                     });
-                    if (!response.ok) throw new Error('Ошибка отправки');
-                    const data = await response.json();
-                    if (data.token) {
-                        token = data.token;
-                        localStorage.setItem('apgsg_token', token);
+                    const responseText = await response.text();
+                    console.log('Ответ sendReview:', responseText);
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
                     }
+
+                    try {
+                        const data = JSON.parse(responseText);
+                        if (data && data.token) {
+                            token = data.token;
+                            localStorage.setItem('apgsg_token', token);
+                        }
+                    } catch (e) {}
+
                     return true;
                 } catch (err) {
-                    console.error(err);
+                    console.error('Ошибка отправки отзыва:', err);
                     showNotif('❌ Ошибка', 'Не удалось отправить отзыв');
                     return false;
                 }
@@ -2571,12 +2600,11 @@
 
             function renderComments() {
                 const list = document.getElementById('commentsList');
-                const filtered = comments.filter(c => !c.banned);
-                if (filtered.length === 0) {
+                if (!comments || comments.length === 0) {
                     list.innerHTML = '<p class="loading">Пока нет отзывов. Будьте первым!</p>';
                     return;
                 }
-                list.innerHTML = filtered.map(c => `
+                list.innerHTML = comments.map(c => `
                     <div class="comment-card" data-id="${c.id}">
                         <div class="comment-header">
                             <span class="comment-name">${escapeHtml(c.userName)}</span>
@@ -2601,13 +2629,12 @@
             }
 
             function updateAverageRating() {
-                const valid = comments.filter(c => !c.banned);
-                if (valid.length === 0) {
+                if (!comments || comments.length === 0) {
                     document.getElementById('averageRating').textContent = '0.0';
                     return;
                 }
-                const sum = valid.reduce((acc, c) => acc + c.rating, 0);
-                document.getElementById('averageRating').textContent = (sum / valid.length).toFixed(1);
+                const sum = comments.reduce((acc, c) => acc + c.rating, 0);
+                document.getElementById('averageRating').textContent = (sum / comments.length).toFixed(1);
             }
 
             document.getElementById('submitFeedback').addEventListener('click', async function(e) {
@@ -2643,7 +2670,6 @@
             window.deleteComment = function(commentId) {
                 if (!isAdmin()) return;
                 comments = comments.filter(c => c.id !== commentId);
-                localStorage.setItem('apgsg_comments', JSON.stringify(comments));
                 renderComments();
                 updateAverageRating();
             };
@@ -2657,7 +2683,6 @@
                     localStorage.setItem('banned_users', JSON.stringify(list));
                 }
                 comments = comments.map(c => c.userId === userId ? { ...c, banned: true } : c);
-                localStorage.setItem('apgsg_comments', JSON.stringify(comments));
                 renderComments();
                 updateAverageRating();
                 showNotif('✅ Пользователь забанен', 'Его комментарии скрыты');
@@ -2667,15 +2692,19 @@
                 if (!isAdmin()) return;
                 const panel = document.getElementById('adminPanel');
                 const list = document.getElementById('adminCommentsList');
-                list.innerHTML = comments.map(c => `
-                    <div class="admin-comment-item">
-                        <strong>${escapeHtml(c.userName)}</strong> (${c.userId})<br>
-                        Оценка: ${c.rating}/5<br>
-                        ${escapeHtml(c.comment)}<br>
-                        <button onclick="deleteComment('${c.id}')">Удалить</button>
-                        <button onclick="banUser('${c.userId}')">Забанить</button>
-                    </div>
-                `).join('');
+                if (!comments || comments.length === 0) {
+                    list.innerHTML = '<p>Нет отзывов для модерации</p>';
+                } else {
+                    list.innerHTML = comments.map(c => `
+                        <div class="admin-comment-item">
+                            <strong>${escapeHtml(c.userName)}</strong> (${c.userId})<br>
+                            Оценка: ${c.rating}/5<br>
+                            ${escapeHtml(c.comment)}<br>
+                            <button onclick="deleteComment('${c.id}')">Удалить</button>
+                            <button onclick="banUser('${c.userId}')">Забанить</button>
+                        </div>
+                    `).join('');
+                }
                 panel.style.display = 'flex';
             }
 
