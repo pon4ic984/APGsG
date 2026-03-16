@@ -2078,7 +2078,18 @@
             let selectedGames = new Set();
             let comments = [];
 
-            // ---------- Загрузка из localStorage ----------
+            function extractField(obj, possibleNames) {
+                if (!obj || typeof obj !== 'object') return null;
+                for (const name of possibleNames) {
+                    if (obj[name] !== undefined) return obj[name];
+                    const lowerName = name.toLowerCase();
+                    for (const key in obj) {
+                        if (key.toLowerCase() === lowerName) return obj[key];
+                    }
+                }
+                return null;
+            }
+
             function loadFromStorage() {
                 const savedUser = localStorage.getItem('apgsg_user');
                 if (savedUser) {
@@ -2107,30 +2118,33 @@
                 updateAuthUI();
             }
 
-            // ---------- Авторизация по коду ----------
             async function authorizeWithCode(code) {
                 try {
                     const response = await fetch(`${API.authorize}&oAuth2code=${code}`);
                     if (!response.ok) throw new Error(`Ошибка авторизации: ${response.status}`);
                     const data = await response.json();
-                    console.log('Ответ authorize:', data);
-                    // Ожидаем поля: username, userID, token
-                    if (data.token && data.userID && data.username) {
-                        token = data.token;
+                    console.log('Ответ authorize (сырой):', data);
+
+                    const tokenField = extractField(data, ['token', 'accessToken', 'access_token']);
+                    const userIdField = extractField(data, ['userID', 'userId', 'id', 'discordId', 'discord_id']);
+                    const usernameField = extractField(data, ['username', 'userName', 'name', 'login']);
+
+                    if (tokenField && userIdField) {
+                        token = tokenField;
                         currentUser = {
-                            id: data.userID,
-                            username: data.username,
+                            id: userIdField,
+                            username: usernameField || 'Пользователь',
                             avatar: null
                         };
                         localStorage.setItem('apgsg_token', token);
                         localStorage.setItem('apgsg_user', JSON.stringify(currentUser));
                         localStorage.removeItem('discord_code');
                         discordCode = null;
-                        showNotif('✅ Успешный вход', `Привет, ${data.username}!`);
+                        showNotif('✅ Успешный вход', `Привет, ${currentUser.username}!`);
                         updateAuthUI();
                     } else {
-                        console.warn('Неожиданный ответ сервера:', data);
-                        showNotif('❌ Ошибка', 'Некорректный ответ сервера');
+                        console.warn('Не удалось найти обязательные поля в ответе:', data);
+                        showNotif('❌ Ошибка', 'Некорректный ответ сервера (нет token или userId)');
                     }
                 } catch (err) {
                     console.error(err);
@@ -2215,7 +2229,6 @@
                 }
             }
 
-            // ---------- Получение статистики ----------
             async function fetchStats() {
                 try {
                     const [onlineRes, totalRes, inGameRes] = await Promise.all([
@@ -2256,27 +2269,58 @@
                 }
             }
 
-            // ---------- Получение списка игр ----------
             async function fetchGames() {
                 try {
                     const response = await fetch(API.roles);
-                    if (!response.ok) throw new Error('Ошибка загрузки игр');
+                    if (!response.ok) throw new Error(`Ошибка загрузки игр: ${response.status}`);
                     const text = await response.text();
-                    const lines = text.split('\n').filter(line => line.trim() !== '');
-                    gamesList = lines.map(line => {
-                        const match = line.match(/^(\d+):\s*(.+)$/);
-                        if (match) {
-                            return {
-                                id: match[1],
-                                name: match[2].trim(),
-                                image: `https://cdn.akamai.steamstatic.com/steam/apps/${getSteamAppId(match[2])}/header.jpg`,
-                                description: `${match[2].trim()} — игра на нашем сервере.`
-                            };
+                    console.log('Ответ SendRoles (сырой):', text);
+
+                    let games = [];
+                    try {
+                        const json = JSON.parse(text);
+                        if (Array.isArray(json)) {
+                            games = json.map(item => ({
+                                id: extractField(item, ['id', 'roleId', 'roleID']),
+                                name: extractField(item, ['name', 'gameName', 'title']),
+                                image: extractField(item, ['image', 'icon', 'img']) || `https://cdn.akamai.steamstatic.com/steam/apps/${getSteamAppId(extractField(item, ['name', 'gameName', 'title']) || '')}/header.jpg`,
+                                description: extractField(item, ['description', 'desc']) || `${extractField(item, ['name', 'gameName', 'title'])} — игра на нашем сервере.`
+                            })).filter(g => g.id && g.name);
+                        } else if (json && typeof json === 'object') {
+                            const data = json.data || json.roles || json.games || [];
+                            if (Array.isArray(data)) {
+                                games = data.map(item => ({
+                                    id: extractField(item, ['id', 'roleId', 'roleID']),
+                                    name: extractField(item, ['name', 'gameName', 'title']),
+                                    image: extractField(item, ['image', 'icon', 'img']) || `https://cdn.akamai.steamstatic.com/steam/apps/${getSteamAppId(extractField(item, ['name', 'gameName', 'title']) || '')}/header.jpg`,
+                                    description: extractField(item, ['description', 'desc']) || `${extractField(item, ['name', 'gameName', 'title'])} — игра на нашем сервере.`
+                                })).filter(g => g.id && g.name);
+                            }
                         }
-                        return null;
-                    }).filter(g => g !== null);
-                    renderGames(gamesList);
-                    document.getElementById('gamesCount').textContent = gamesList.length;
+                    } catch (e) {
+                        const lines = text.split('\n').filter(line => line.trim() !== '');
+                        games = lines.map(line => {
+                            const match = line.match(/^(\d+):\s*(.+)$/);
+                            if (match) {
+                                return {
+                                    id: match[1],
+                                    name: match[2].trim(),
+                                    image: `https://cdn.akamai.steamstatic.com/steam/apps/${getSteamAppId(match[2])}/header.jpg`,
+                                    description: `${match[2].trim()} — игра на нашем сервере.`
+                                };
+                            }
+                            return null;
+                        }).filter(g => g !== null);
+                    }
+
+                    if (games.length === 0) {
+                        console.warn('Не удалось распарсить список игр');
+                        showNotif('⚠️ Ошибка', 'Не удалось загрузить список игр');
+                    } else {
+                        gamesList = games;
+                        renderGames(gamesList);
+                        document.getElementById('gamesCount').textContent = gamesList.length;
+                    }
                 } catch (err) {
                     console.error('Ошибка загрузки игр:', err);
                     showNotif('⚠️ Ошибка', 'Не удалось загрузить список игр');
@@ -2377,7 +2421,6 @@
                 document.getElementById('bulkAssignBtn').disabled = count === 0;
             }
 
-            // ---------- Выдача одной роли ----------
             async function assignSingleRole(roleId) {
                 if (!token) {
                     showNotif('🔒 Требуется вход', 'Сначала авторизуйтесь через Discord');
@@ -2391,8 +2434,9 @@
                 if (response.ok) {
                     try {
                         const data = JSON.parse(text);
-                        if (data && data.token) {
-                            token = data.token;
+                        const newToken = extractField(data, ['token', 'accessToken', 'refreshToken']);
+                        if (newToken) {
+                            token = newToken;
                             localStorage.setItem('apgsg_token', token);
                         }
                     } catch (e) {}
@@ -2409,7 +2453,6 @@
                 }
             }
 
-            // ---------- Массовая выдача ----------
             async function assignMultipleRoles(roleIds) {
                 if (!token) {
                     showNotif('❌ Ошибка', 'Нет токена для массовой выдачи');
@@ -2424,8 +2467,9 @@
                 if (response.ok) {
                     try {
                         const data = JSON.parse(text);
-                        if (data && data.token) {
-                            token = data.token;
+                        const newToken = extractField(data, ['token', 'accessToken', 'refreshToken']);
+                        if (newToken) {
+                            token = newToken;
                             localStorage.setItem('apgsg_token', token);
                         }
                     } catch (e) {}
@@ -2495,23 +2539,28 @@
                 login();
             }
 
-            // ---------- Загрузка отзывов ----------
             async function fetchReviews() {
                 try {
                     const response = await fetch(API.getReviews);
                     if (!response.ok) throw new Error(`Ошибка загрузки отзывов: ${response.status}`);
                     const data = await response.json();
-                    console.log('Ответ getReviews:', data);
+                    console.log('Ответ getReviews (сырой):', data);
 
-                    let reviewsArray = Array.isArray(data) ? data : (data.reviews || data.comments || []);
+                    let reviewsArray = [];
+                    if (Array.isArray(data)) {
+                        reviewsArray = data;
+                    } else if (data && typeof data === 'object') {
+                        reviewsArray = data.reviews || data.comments || data.data || [];
+                    }
+
                     comments = reviewsArray.map((item, index) => {
                         return {
-                            id: item.id || index,
-                            userId: item.userId || item.userID || item.authorId || 'unknown',
-                            userName: item.userName || item.username || item.author || 'Аноним',
-                            rating: item.rating || 5,
-                            comment: item.comment || item.text || item.message || '',
-                            date: item.date || item.createdAt || new Date().toLocaleString(),
+                            id: extractField(item, ['id', 'reviewId', 'commentId']) || index,
+                            userId: extractField(item, ['userId', 'userID', 'authorId', 'id']) || 'unknown',
+                            userName: extractField(item, ['userName', 'username', 'author', 'name']) || 'Аноним',
+                            rating: extractField(item, ['rating', 'score', 'stars']) || 5,
+                            comment: extractField(item, ['comment', 'text', 'message', 'content']) || '',
+                            date: extractField(item, ['date', 'createdAt', 'timestamp', 'time']) || new Date().toLocaleString(),
                             banned: false
                         };
                     });
@@ -2524,14 +2573,13 @@
                 }
             }
 
-            // ---------- Отправка отзыва ----------
             async function submitReview(rating, text) {
                 if (!token) {
                     showNotif('🔒 Требуется вход', 'Войдите через Discord');
                     return false;
                 }
                 try {
-                    const body = JSON.stringify({ comment: text });
+                    const body = JSON.stringify({ comment: text, message: text, content: text });
                     const response = await fetch(`${API.sendReview}&token=${token}&rating=${rating}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -2546,8 +2594,9 @@
 
                     try {
                         const data = JSON.parse(responseText);
-                        if (data && data.token) {
-                            token = data.token;
+                        const newToken = extractField(data, ['token', 'accessToken', 'refreshToken']);
+                        if (newToken) {
+                            token = newToken;
                             localStorage.setItem('apgsg_token', token);
                         }
                     } catch (e) {}
