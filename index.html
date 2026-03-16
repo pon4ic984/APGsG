@@ -14,6 +14,7 @@
     <link rel="manifest" href="/site.webmanifest" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
+        /* все стили остаются без изменений */
         *,
         *::before,
         *::after {
@@ -395,8 +396,36 @@
             display: flex; align-items: center; gap: 8px;
         }
         .admin-section-title i { color: var(--primary-light); }
+
+        /* Улучшенные контролы админки */
+        .admin-controls {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+            align-items: center;
+        }
+        .admin-controls input,
+        .admin-controls select {
+            padding: 8px 12px;
+            background: var(--dark-card);
+            border: 1px solid var(--dark-border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-family: inherit;
+        }
+        .admin-controls label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
         .admin-comments-list {
-            display: flex; flex-direction: column; gap: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
         }
         .admin-comment-item {
             background: var(--dark-card-2);
@@ -404,33 +433,46 @@
             border-radius: var(--radius-md);
             padding: 1rem 1.5rem;
             transition: var(--transition);
-            display: flex; flex-wrap: wrap; align-items: center; gap: 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 1rem;
         }
         .admin-comment-item:hover {
             border-color: var(--primary);
             transform: translateX(4px);
         }
         .admin-comment-info {
-            flex: 1; min-width: 200px;
+            flex: 1;
+            min-width: 200px;
         }
         .admin-comment-info strong {
             color: var(--primary-light);
             font-size: 1rem;
         }
         .admin-comment-info .comment-meta {
-            font-size: 0.8rem; color: var(--text-muted);
-            display: flex; gap: 15px; margin-top: 4px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 15px;
+            margin-top: 4px;
         }
         .admin-comment-actions {
-            display: flex; gap: 8px;
+            display: flex;
+            gap: 8px;
         }
         .admin-comment-actions button {
             background: rgba(255,255,255,0.05);
             border: 1px solid var(--dark-border);
             color: var(--text-secondary);
-            padding: 6px 12px; border-radius: var(--radius-sm);
-            cursor: pointer; transition: var(--transition);
-            font-size: 0.8rem; display: inline-flex; align-items: center; gap: 5px;
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.8rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
         }
         .admin-comment-actions button:hover {
             border-color: var(--primary);
@@ -847,13 +889,35 @@
             </div>
             <div class="admin-body">
                 <div class="admin-section-title"><i class="fas fa-comments"></i> Управление отзывами</div>
+                <!-- Панель управления -->
+                <div class="admin-controls">
+                    <input type="text" id="adminSearch" placeholder="🔍 Поиск по имени или тексту...">
+                    <select id="adminRatingFilter">
+                        <option value="all">Все рейтинги</option>
+                        <option value="5">5 ★</option>
+                        <option value="4">4 ★</option>
+                        <option value="3">3 ★</option>
+                        <option value="2">2 ★</option>
+                        <option value="1">1 ★</option>
+                    </select>
+                    <select id="adminSort">
+                        <option value="date_desc">Новые сначала</option>
+                        <option value="date_asc">Старые сначала</option>
+                        <option value="rating_desc">Высокий рейтинг</option>
+                        <option value="rating_asc">Низкий рейтинг</option>
+                    </select>
+                    <label>
+                        <input type="checkbox" id="showBannedOnly"> Только забаненные
+                    </label>
+                    <button class="btn btn-secondary" id="exportCsv"><i class="fas fa-download"></i> Экспорт CSV</button>
+                    <button class="btn btn-secondary" id="refreshAdmin"><i class="fas fa-sync-alt"></i> Обновить</button>
+                </div>
                 <div class="admin-comments-list" id="adminCommentsList">
                     <div class="loading">Загрузка...</div>
                 </div>
             </div>
             <div class="admin-footer">
                 <button class="btn btn-secondary" id="closeAdmin">Закрыть</button>
-                <button class="btn btn-primary" id="refreshAdmin" style="margin-left: 10px;"><i class="fas fa-sync-alt"></i> Обновить</button>
             </div>
         </div>
     </div>
@@ -885,6 +949,7 @@
             let gamesList = [];
             let selectedGames = new Set();
             let comments = [];
+            let filteredComments = []; // для админки
 
             function extractField(obj, possibleNames) {
                 if (!obj || typeof obj !== 'object') return null;
@@ -1027,15 +1092,12 @@
                         submitBtn.disabled = false;
                         submitBtn.querySelector('i').className = 'fas fa-paper-plane';
                         authMsg.textContent = '';
-                        console.log('Кнопка отправки отзыва разблокирована');
                     } else if (currentUser && isBanned(currentUser.id)) {
                         submitBtn.disabled = true;
                         authMsg.textContent = 'Вы забанены и не можете оставлять отзывы.';
-                        console.log('Пользователь забанен, кнопка заблокирована');
                     } else {
                         submitBtn.disabled = true;
                         authMsg.textContent = 'Войдите через Discord, чтобы оставить отзыв.';
-                        console.log('Пользователь не авторизован, кнопка заблокирована');
                     }
                 }
             }
@@ -1045,8 +1107,6 @@
                     const response = await fetch(API.statistics);
                     if (!response.ok) throw new Error(`Ошибка статистики: ${response.status}`);
                     const data = await response.json();
-                    console.log('Ответ getStatistics:', data);
-
                     const online = data.Online || 0;
                     const total = data.Total || 0;
                     const inGame = data.InGame || 0;
@@ -1085,7 +1145,6 @@
                     const response = await fetch(API.roles);
                     if (!response.ok) throw new Error(`Ошибка загрузки игр: ${response.status}`);
                     const text = await response.text();
-                    console.log('Ответ SendRoles (сырой):', text);
 
                     let games = [];
                     try {
@@ -1212,6 +1271,7 @@
                 });
             }
 
+            let currentGame = null;
             function openGamePopup(game) {
                 if (!currentUser && !token && !discordCode) {
                     showNotif('🔒 Требуется вход', 'Сначала авторизуйтесь через Discord');
@@ -1240,7 +1300,6 @@
                 const url = `${API.addRoles}&roles=${roleId}&token=${token}`;
                 const response = await fetch(url);
                 const text = await response.text();
-                console.log('Ответ addRoles (одиночная):', text);
 
                 if (response.ok) {
                     try {
@@ -1273,7 +1332,6 @@
                 const url = `${API.addRoles}&roles=${rolesStr}&token=${token}`;
                 const response = await fetch(url);
                 const text = await response.text();
-                console.log('Ответ addRoles (массовая):', text);
 
                 if (response.ok) {
                     try {
@@ -1359,7 +1417,6 @@
                     const response = await fetch(url);
                     if (!response.ok) throw new Error(`Ошибка загрузки отзывов: ${response.status}`);
                     const data = await response.json();
-                    console.log('Ответ getReviews (сырой):', data);
 
                     if (data && data.token) {
                         token = data.token;
@@ -1375,14 +1432,13 @@
 
                     comments = reviewsArray.map((item, index) => {
                         return {
-                            id: extractField(item, ['id', 'reviewId', 'commentId']) || index,
+                            id: extractField(item, ['id', 'reviewId', 'commentId']) || `temp-${index}`,
                             userId: extractField(item, ['userId', 'userID', 'authorId', 'id']) || 'unknown',
                             userName: extractField(item, ['userName', 'username', 'author', 'name']) || 'Аноним',
                             rating: extractField(item, ['rating', 'score', 'stars']) || 5,
                             comment: extractField(item, ['comment', 'text', 'message', 'content']) || '',
                             date: extractField(item, ['date', 'createdAt', 'timestamp', 'time']) || new Date().toLocaleString(),
-                            myRating: extractField(item, ['myRating']) || 'none',
-                            banned: false
+                            myRating: extractField(item, ['myRating']) || 'none'
                         };
                     });
                     renderComments();
@@ -1394,19 +1450,21 @@
                 }
             }
 
-            // ИСПРАВЛЕНО: отправка отзыва через GET с параметром comment в URL
             async function submitReview(rating, text) {
                 if (!token) {
                     showNotif('🔒 Требуется вход', 'Войдите через Discord');
                     return false;
                 }
+                // ограничение длины комментария для GET
+                if (text.length > 1500) {
+                    alert('Комментарий слишком длинный (макс. 1500 символов)');
+                    return false;
+                }
                 try {
                     const encodedComment = encodeURIComponent(text);
                     const url = `${API.sendReview}&token=${token}&rating=${rating}&comment=${encodedComment}`;
-                    console.log('Отправка отзыва на URL (GET):', url);
                     const response = await fetch(url);
                     const responseText = await response.text();
-                    console.log('Ответ sendReview (GET):', responseText);
 
                     if (!response.ok) {
                         throw new Error(`HTTP ${response.status}`);
@@ -1438,7 +1496,6 @@
                     const url = `${API.deleteReview}&token=${token}&review=${reviewId}`;
                     const response = await fetch(url);
                     const responseText = await response.text();
-                    console.log('Ответ deleteReview:', responseText);
 
                     if (!response.ok) {
                         throw new Error(`HTTP ${response.status}`);
@@ -1470,7 +1527,6 @@
                     const url = `${API.rateReview}&token=${token}&review=${reviewId}&rating=${ratingValue}`;
                     const response = await fetch(url);
                     const responseText = await response.text();
-                    console.log('Ответ rateReview:', responseText);
 
                     if (!response.ok) {
                         throw new Error(`HTTP ${response.status}`);
@@ -1533,11 +1589,14 @@
 
             function renderComments() {
                 const list = document.getElementById('commentsList');
-                if (!comments || comments.length === 0) {
+                const bannedList = JSON.parse(localStorage.getItem('banned_users') || '[]');
+                const visibleComments = comments.filter(c => !bannedList.includes(c.userId));
+
+                if (!visibleComments.length) {
                     list.innerHTML = '<p class="loading">Пока нет отзывов. Будьте первым!</p>';
                     return;
                 }
-                list.innerHTML = comments.map(c => {
+                list.innerHTML = visibleComments.map(c => {
                     const canDelete = currentUser && c.userId === currentUser.id;
                     const myRating = c.myRating || 'none';
                     return `
@@ -1596,12 +1655,14 @@
                 }
             };
 
+            // Админские функции
             function openAdminPanel() {
                 if (!isAdmin()) return;
                 const panel = document.getElementById('adminPanel');
                 panel.classList.add('active');
+                filteredComments = [...comments];
+                filterComments(); // применить фильтры (по умолчанию пустые)
                 updateAdminStats();
-                renderAdminComments();
             }
 
             function updateAdminStats() {
@@ -1614,29 +1675,68 @@
                 document.getElementById('adminUniqueUsers').textContent = uniqueUsers;
             }
 
-            function renderAdminComments() {
+            function filterComments() {
+                const search = document.getElementById('adminSearch')?.value.toLowerCase() || '';
+                const ratingFilter = document.getElementById('adminRatingFilter')?.value || 'all';
+                const showBanned = document.getElementById('showBannedOnly')?.checked || false;
+                const sort = document.getElementById('adminSort')?.value || 'date_desc';
+
+                const bannedList = JSON.parse(localStorage.getItem('banned_users') || '[]');
+
+                filteredComments = comments.filter(c => {
+                    const matchesSearch = search === '' || 
+                        c.userName.toLowerCase().includes(search) || 
+                        c.comment.toLowerCase().includes(search);
+                    const matchesRating = ratingFilter === 'all' || c.rating === parseInt(ratingFilter);
+                    const isBanned = bannedList.includes(c.userId);
+                    return matchesSearch && matchesRating && (showBanned ? isBanned : true);
+                });
+
+                // Сортировка
+                filteredComments.sort((a, b) => {
+                    switch (sort) {
+                        case 'date_desc': return new Date(b.date) - new Date(a.date);
+                        case 'date_asc': return new Date(a.date) - new Date(b.date);
+                        case 'rating_desc': return b.rating - a.rating;
+                        case 'rating_asc': return a.rating - b.rating;
+                        default: return 0;
+                    }
+                });
+
+                renderAdminComments(filteredComments);
+            }
+
+            function renderAdminComments(commentsArray) {
                 const list = document.getElementById('adminCommentsList');
-                if (!comments || comments.length === 0) {
-                    list.innerHTML = '<p style="text-align:center; color:var(--text-muted);">Нет отзывов для модерации</p>';
+                if (!commentsArray || commentsArray.length === 0) {
+                    list.innerHTML = '<p style="text-align:center; color:var(--text-muted);">Нет отзывов для отображения</p>';
                     return;
                 }
-                list.innerHTML = comments.map(c => `
-                    <div class="admin-comment-item" data-id="${c.id}">
+
+                const bannedList = JSON.parse(localStorage.getItem('banned_users') || '[]');
+                list.innerHTML = commentsArray.map(c => {
+                    const isBanned = bannedList.includes(c.userId);
+                    return `
+                    <div class="admin-comment-item" data-id="${c.id}" data-userid="${c.userId}" style="${isBanned ? 'opacity:0.6; background:rgba(255,0,0,0.1);' : ''}">
                         <div class="admin-comment-info">
                             <strong>${escapeHtml(c.userName)}</strong> (ID: ${c.userId})
                             <div class="comment-meta">
                                 <span><i class="fas fa-star" style="color:#ffc107;"></i> ${c.rating}/5</span>
                                 <span><i class="fas fa-calendar"></i> ${c.date}</span>
-                                <span><i class="fas fa-heart" style="color:${c.myRating === 'like' ? '#00F5D4' : 'inherit'}"></i> ${c.myRating}</span>
+                                <span><i class="fas fa-heart" style="color:${c.myRating === 'like' ? '#00F5D4' : 'inherit'}"></i> ${c.myRating || 'none'}</span>
+                                ${isBanned ? '<span style="color:#ff6b6b;">(забанен)</span>' : ''}
                             </div>
                             <div style="margin-top:6px;">${escapeHtml(c.comment)}</div>
                         </div>
                         <div class="admin-comment-actions">
                             <button class="delete-btn" onclick="adminDeleteComment('${c.id}')"><i class="fas fa-trash"></i> Удалить</button>
-                            <button onclick="adminBanUser('${c.userId}')"><i class="fas fa-ban"></i> Забанить</button>
+                            ${isBanned 
+                                ? `<button onclick="adminUnbanUser('${c.userId}')"><i class="fas fa-check-circle"></i> Разбанить</button>` 
+                                : `<button onclick="adminBanUser('${c.userId}')"><i class="fas fa-ban"></i> Забанить</button>`
+                            }
                         </div>
                     </div>
-                `).join('');
+                `}).join('');
             }
 
             window.adminDeleteComment = async function(commentId) {
@@ -1645,8 +1745,8 @@
                 if (success) {
                     showNotif('✅ Отзыв удалён', 'Администратор удалил отзыв');
                     await fetchReviews();
+                    filterComments();
                     updateAdminStats();
-                    renderAdminComments();
                 }
             };
 
@@ -1658,23 +1758,102 @@
                     list.push(userId);
                     localStorage.setItem('banned_users', JSON.stringify(list));
                 }
-                comments = comments.map(c => c.userId === userId ? { ...c, banned: true } : c);
+                filterComments();
                 renderComments();
                 updateAverageRating();
                 updateAdminStats();
-                renderAdminComments();
                 showNotif('✅ Пользователь забанен', 'Его комментарии скрыты из общего списка');
             };
 
-            document.getElementById('closeAdmin').addEventListener('click', () => {
-                document.getElementById('adminPanel').classList.remove('active');
-            });
-
-            document.getElementById('refreshAdmin').addEventListener('click', async () => {
-                await fetchReviews();
+            window.adminUnbanUser = function(userId) {
+                if (!isAdmin()) return;
+                const banned = localStorage.getItem('banned_users');
+                const list = banned ? JSON.parse(banned) : [];
+                const newList = list.filter(id => id !== userId);
+                localStorage.setItem('banned_users', JSON.stringify(newList));
+                showNotif('✅ Пользователь разбанен', 'Его отзывы снова видны');
+                filterComments();
+                renderComments();
+                updateAverageRating();
                 updateAdminStats();
-                renderAdminComments();
-                showNotif('🔄 Обновлено', 'Данные админ-панели обновлены');
+            };
+
+            function exportCommentsToCsv() {
+                if (!filteredComments.length) {
+                    showNotif('❌ Нет данных', 'Нечего экспортировать');
+                    return;
+                }
+                const headers = ['ID', 'UserID', 'Имя', 'Рейтинг', 'Комментарий', 'Дата', 'Лайк/дизлайк'];
+                const rows = filteredComments.map(c => [
+                    c.id,
+                    c.userId,
+                    c.userName,
+                    c.rating,
+                    c.comment.replace(/"/g, '""'),
+                    c.date,
+                    c.myRating || ''
+                ]);
+                const csvContent = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+                const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `apgsg_reviews_${new Date().toISOString().slice(0,10)}.csv`;
+                link.click();
+                URL.revokeObjectURL(link.href);
+            }
+
+            // Инициализация админ-контролов
+            function initAdminControls() {
+                document.getElementById('adminSearch')?.addEventListener('input', filterComments);
+                document.getElementById('adminRatingFilter')?.addEventListener('change', filterComments);
+                document.getElementById('adminSort')?.addEventListener('change', filterComments);
+                document.getElementById('showBannedOnly')?.addEventListener('change', filterComments);
+                document.getElementById('exportCsv')?.addEventListener('click', exportCommentsToCsv);
+                document.getElementById('refreshAdmin')?.addEventListener('click', async () => {
+                    await fetchReviews();
+                    filterComments();
+                    updateAdminStats();
+                    showNotif('🔄 Обновлено', 'Данные админ-панели обновлены');
+                });
+                document.getElementById('closeAdmin').addEventListener('click', () => {
+                    document.getElementById('adminPanel').classList.remove('active');
+                });
+            }
+
+            // Обработчик отправки отзыва
+            document.getElementById('submitFeedback').addEventListener('click', async function(e) {
+                e.preventDefault();
+                if (!currentUser) {
+                    showNotif('🔒 Требуется вход', 'Войдите через Discord');
+                    login();
+                    return;
+                }
+                const rating = parseInt(document.querySelector('.rating-value').textContent);
+                if (rating < 1 || rating > 5) {
+                    alert('Поставьте оценку от 1 до 5');
+                    return;
+                }
+                const text = document.getElementById('feedback-message').value.trim();
+                if (!text) {
+                    alert('Напишите комментарий');
+                    return;
+                }
+                if (isBanned(currentUser.id)) {
+                    showNotif('⛔ Вы забанены', 'Вы не можете оставлять отзывы');
+                    return;
+                }
+                if (!token) {
+                    showNotif('🔒 Ошибка', 'Токен отсутствует, перезайдите');
+                    logout();
+                    return;
+                }
+                const success = await submitReview(rating, text);
+                if (success) {
+                    showNotif('✅ Спасибо!', 'Ваш отзыв добавлен');
+                    document.getElementById('feedback-message').value = '';
+                    resetStars();
+                    await fetchReviews();
+                }
             });
 
             function initGameSearch() {
@@ -1808,43 +1987,6 @@
                 header.appendChild(btn);
             }
 
-            // Обработчик отправки отзыва
-            document.getElementById('submitFeedback').addEventListener('click', async function(e) {
-                e.preventDefault();
-                console.log('Кнопка отправки отзыва нажата');
-                if (!currentUser) {
-                    showNotif('🔒 Требуется вход', 'Войдите через Discord');
-                    login();
-                    return;
-                }
-                const rating = parseInt(document.querySelector('.rating-value').textContent);
-                if (rating < 1 || rating > 5) {
-                    alert('Поставьте оценку от 1 до 5');
-                    return;
-                }
-                const text = document.getElementById('feedback-message').value.trim();
-                if (!text) {
-                    alert('Напишите комментарий');
-                    return;
-                }
-                if (isBanned(currentUser.id)) {
-                    showNotif('⛔ Вы забанены', 'Вы не можете оставлять отзывы');
-                    return;
-                }
-                if (!token) {
-                    showNotif('🔒 Ошибка', 'Токен отсутствует, перезайдите');
-                    logout();
-                    return;
-                }
-                const success = await submitReview(rating, text);
-                if (success) {
-                    showNotif('✅ Спасибо!', 'Ваш отзыв добавлен');
-                    document.getElementById('feedback-message').value = '';
-                    resetStars();
-                    await fetchReviews();
-                }
-            });
-
             window.addEventListener('load', function() {
                 initHeader();
                 initMobileMenu();
@@ -1862,9 +2004,10 @@
                 fetchGames();
                 fetchReviews();
                 addRefreshButton();
+                initAdminControls(); // подключаем обработчики админки
                 setInterval(fetchStats, 30000);
 
-                // Устанавливаем динамическую версию в админке (меняется при каждой загрузке страницы)
+                // Динамическая версия админки
                 const versionEl = document.getElementById('adminVersion');
                 if (versionEl) {
                     const now = new Date();
