@@ -326,7 +326,7 @@
         .admin-actions button:hover { border-color:var(--primary); color:var(--text-primary); }
         .loading { text-align:center; color:var(--text-muted); padding:2rem; }
 
-        /* ========== УЛУЧШЕННАЯ АДМИН-ПАНЕЛЬ ========== */
+        /* ========== АДМИН-ПАНЕЛЬ ========== */
         .admin-panel {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.9); backdrop-filter: blur(8px);
@@ -1021,12 +1021,15 @@
                         submitBtn.disabled = false;
                         submitBtn.querySelector('i').className = 'fas fa-paper-plane';
                         authMsg.textContent = '';
+                        console.log('Кнопка отправки отзыва разблокирована');
                     } else if (currentUser && isBanned(currentUser.id)) {
                         submitBtn.disabled = true;
                         authMsg.textContent = 'Вы забанены и не можете оставлять отзывы.';
+                        console.log('Пользователь забанен, кнопка заблокирована');
                     } else {
                         submitBtn.disabled = true;
                         authMsg.textContent = 'Войдите через Discord, чтобы оставить отзыв.';
+                        console.log('Пользователь не авторизован, кнопка заблокирована');
                     }
                 }
             }
@@ -1392,6 +1395,7 @@
                 }
                 try {
                     const url = `${API.sendReview}&token=${token}&rating=${rating}`;
+                    console.log('Отправка отзыва на URL:', url);
                     const response = await fetch(url, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -1588,7 +1592,6 @@
                 }
             };
 
-            // Админ-панель
             function openAdminPanel() {
                 if (!isAdmin()) return;
                 const panel = document.getElementById('adminPanel');
@@ -1634,7 +1637,6 @@
 
             window.adminDeleteComment = async function(commentId) {
                 if (!isAdmin()) return;
-                // Для админа удаление через тот же эндпоинт (сервер должен разрешать админам)
                 const success = await deleteMyReview(commentId);
                 if (success) {
                     showNotif('✅ Отзыв удалён', 'Администратор удалил отзыв');
@@ -1670,9 +1672,6 @@
                 renderAdminComments();
                 showNotif('🔄 Обновлено', 'Данные админ-панели обновлены');
             });
-
-            // Старая функция openAdminPanel оставлена для совместимости
-            window.openAdminPanel = openAdminPanel;
 
             function initGameSearch() {
                 document.getElementById('gameSearch').addEventListener('input', function(e) {
@@ -1804,6 +1803,43 @@
                 });
                 header.appendChild(btn);
             }
+
+            // Обработчик отправки отзыва
+            document.getElementById('submitFeedback').addEventListener('click', async function(e) {
+                e.preventDefault();
+                console.log('Кнопка отправки отзыва нажата');
+                if (!currentUser) {
+                    showNotif('🔒 Требуется вход', 'Войдите через Discord');
+                    login();
+                    return;
+                }
+                const rating = parseInt(document.querySelector('.rating-value').textContent);
+                if (rating < 1 || rating > 5) {
+                    alert('Поставьте оценку от 1 до 5');
+                    return;
+                }
+                const text = document.getElementById('feedback-message').value.trim();
+                if (!text) {
+                    alert('Напишите комментарий');
+                    return;
+                }
+                if (isBanned(currentUser.id)) {
+                    showNotif('⛔ Вы забанены', 'Вы не можете оставлять отзывы');
+                    return;
+                }
+                if (!token) {
+                    showNotif('🔒 Ошибка', 'Токен отсутствует, перезайдите');
+                    logout();
+                    return;
+                }
+                const success = await submitReview(rating, text);
+                if (success) {
+                    showNotif('✅ Спасибо!', 'Ваш отзыв добавлен');
+                    document.getElementById('feedback-message').value = '';
+                    resetStars();
+                    await fetchReviews();
+                }
+            });
 
             window.addEventListener('load', function() {
                 initHeader();
