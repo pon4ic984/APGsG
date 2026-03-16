@@ -1408,7 +1408,6 @@
                 login();
             }
 
-            // ИСПРАВЛЕННАЯ ФУНКЦИЯ ЗАГРУЗКИ ОТЗЫВОВ
             async function fetchReviews() {
                 try {
                     let url = API.getReviews;
@@ -1419,49 +1418,39 @@
                     if (!response.ok) throw new Error(`Ошибка загрузки отзывов: ${response.status}`);
                     const data = await response.json();
 
-                    // Обновление токена, если он есть в ответе (на том же уровне, что и данные)
+                    // Обновление токена, если он есть в ответе
                     if (data && data.token) {
                         token = data.token;
                         localStorage.setItem('apgsg_token', token);
                     }
 
                     let reviewsArray = [];
-                    // Если ответ — массив, то это может быть список отзывов,
-                    // причём последний элемент может содержать токен (проверим)
                     if (Array.isArray(data)) {
-                        // Пройдём по массиву, соберём отзывы, а если встретится объект с полем token — извлечём его
-                        reviewsArray = data.filter(item => !item.token); // все элементы без поля token — отзывы
+                        reviewsArray = data.filter(item => !item.token);
                         const tokenObj = data.find(item => item.token);
                         if (tokenObj && tokenObj.token) {
                             token = tokenObj.token;
                             localStorage.setItem('apgsg_token', token);
                         }
                     } else if (data && typeof data === 'object') {
-                        // Если ответ — объект, ищем поля reviews / comments / data
                         reviewsArray = data.reviews || data.comments || data.data || [];
-                        // токен уже могли получить выше
                     }
 
                     // Преобразуем каждый отзыв в единый формат
                     comments = reviewsArray.map((item, index) => {
-                        // Пытаемся найти ID отзыва (нужен для удаления/оценки)
                         const id = extractField(item, ['reviewId', 'reviewID', 'id', 'commentId']) || `temp-${index}`;
                         const userId = extractField(item, ['authorID', 'authorId', 'userId', 'userID']) || 'unknown';
                         const userName = extractField(item, ['authorName', 'userName', 'username', 'author']) || 'Аноним';
                         const rating = extractField(item, ['rating']) || 5;
-                        // Текст отзыва: ищем reviewText или comment
                         const comment = extractField(item, ['reviewText', 'comment', 'text', 'message']) || '';
-                        // Дата: может быть timestamp (число) или строка
                         let date = extractField(item, ['timestamp', 'date', 'createdAt', 'time']);
                         if (typeof date === 'number') {
                             date = new Date(date).toLocaleString();
                         } else if (!date) {
                             date = new Date().toLocaleString();
                         }
-                        // Лайки/дизлайки (пока не используются, но сохраним)
                         const likes = extractField(item, ['likes']) || 0;
                         const dislikes = extractField(item, ['dislikes']) || 0;
-                        // Оценка текущего пользователя (myRating) может быть в ответе
                         const myRating = extractField(item, ['myRating']) || 'none';
 
                         return {
@@ -1486,26 +1475,36 @@
                 }
             }
 
+            // ИСПРАВЛЕННАЯ ФУНКЦИЯ ОТПРАВКИ ОТЗЫВА (GET с телом)
             async function submitReview(rating, text) {
                 if (!token) {
                     showNotif('🔒 Требуется вход', 'Войдите через Discord');
                     return false;
                 }
-                // ограничение длины комментария для GET
                 if (text.length > 1500) {
                     alert('Комментарий слишком длинный (макс. 1500 символов)');
                     return false;
                 }
                 try {
-                    const encodedComment = encodeURIComponent(text);
-                    const url = `${API.sendReview}&token=${token}&rating=${rating}&comment=${encodedComment}`;
-                    const response = await fetch(url);
+                    // Формируем URL с параметрами token и rating
+                    const url = `${API.sendReview}&token=${token}&rating=${rating}`;
+                    
+                    // Отправляем GET-запрос с телом, содержащим текст комментария
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'text/plain;charset=UTF-8'
+                        },
+                        body: text // тело запроса — просто текст комментария
+                    });
+
                     const responseText = await response.text();
 
                     if (!response.ok) {
                         throw new Error(`HTTP ${response.status}`);
                     }
 
+                    // Пытаемся извлечь новый токен и, возможно, данные нового отзыва
                     try {
                         const data = JSON.parse(responseText);
                         const newToken = extractField(data, ['token', 'accessToken', 'refreshToken']);
@@ -1513,7 +1512,29 @@
                             token = newToken;
                             localStorage.setItem('apgsg_token', token);
                         }
-                    } catch (e) {}
+
+                        // Если сервер вернул данные нового отзыва, добавим его сразу
+                        const newReview = data.review || data.comment || data;
+                        if (newReview && typeof newReview === 'object' && (newReview.authorID || newReview.authorId)) {
+                            const reviewObj = {
+                                id: extractField(newReview, ['reviewId', 'id']) || 'temp-' + Date.now(),
+                                userId: extractField(newReview, ['authorID', 'authorId']) || currentUser.id,
+                                userName: extractField(newReview, ['authorName', 'userName']) || currentUser.username,
+                                rating: extractField(newReview, ['rating']) || rating,
+                                comment: extractField(newReview, ['reviewText', 'comment', 'text']) || text,
+                                date: extractField(newReview, ['timestamp']) ? new Date(extractField(newReview, ['timestamp'])).toLocaleString() : new Date().toLocaleString(),
+                                likes: 0,
+                                dislikes: 0,
+                                myRating: 'none'
+                            };
+                            comments.unshift(reviewObj);
+                            renderComments();
+                            updateAverageRating();
+                            return true; // не вызываем fetchReviews, отзыв уже добавлен
+                        }
+                    } catch (e) {
+                        // если не JSON или нет данных, просто игнорируем
+                    }
 
                     return true;
                 } catch (err) {
@@ -1697,7 +1718,7 @@
                 const panel = document.getElementById('adminPanel');
                 panel.classList.add('active');
                 filteredComments = [...comments];
-                filterComments(); // применить фильтры (по умолчанию пустые)
+                filterComments();
                 updateAdminStats();
             }
 
@@ -1728,7 +1749,6 @@
                     return matchesSearch && matchesRating && (showBanned ? isBanned : true);
                 });
 
-                // Сортировка
                 filteredComments.sort((a, b) => {
                     switch (sort) {
                         case 'date_desc': return new Date(b.date) - new Date(a.date);
@@ -1838,7 +1858,6 @@
                 URL.revokeObjectURL(link.href);
             }
 
-            // Инициализация админ-контролов
             function initAdminControls() {
                 document.getElementById('adminSearch')?.addEventListener('input', filterComments);
                 document.getElementById('adminRatingFilter')?.addEventListener('change', filterComments);
@@ -1856,7 +1875,6 @@
                 });
             }
 
-            // Обработчик отправки отзыва
             document.getElementById('submitFeedback').addEventListener('click', async function(e) {
                 e.preventDefault();
                 if (!currentUser) {
@@ -1888,7 +1906,7 @@
                     showNotif('✅ Спасибо!', 'Ваш отзыв добавлен');
                     document.getElementById('feedback-message').value = '';
                     resetStars();
-                    await fetchReviews();
+                    await fetchReviews(); // на всякий случай обновим список
                 }
             });
 
@@ -2040,10 +2058,9 @@
                 fetchGames();
                 fetchReviews();
                 addRefreshButton();
-                initAdminControls(); // подключаем обработчики админки
+                initAdminControls();
                 setInterval(fetchStats, 30000);
 
-                // Динамическая версия админки
                 const versionEl = document.getElementById('adminVersion');
                 if (versionEl) {
                     const now = new Date();
