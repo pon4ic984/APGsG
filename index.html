@@ -2058,7 +2058,7 @@
                 total: `${CONFIG.API_BASE_URL}/MARAZMUS?question=PITotal`,
                 inGame: `${CONFIG.API_BASE_URL}/MARAZMUS?question=PIInGame`,
                 roles: `${CONFIG.API_BASE_URL}/MARAZMUS?question=SendRoles`,
-                addRole2: `${CONFIG.API_BASE_URL}/MARAZMUS?question=addRole2`,
+                addRoles: `${CONFIG.API_BASE_URL}/MARAZMUS?question=addRoles`,
                 authorize: `${CONFIG.API_BASE_URL}/MARAZMUS?question=authorize`,
                 getReviews: `${CONFIG.API_BASE_URL}/MARAZMUS?question=getReviews`,
                 sendReview: `${CONFIG.API_BASE_URL}/MARAZMUS?question=sendReview`
@@ -2419,7 +2419,7 @@
                     showNotif('🔒 Требуется вход', 'Сначала авторизуйтесь через Discord');
                     return false;
                 }
-                const url = `${API.addRole2}&role=${roleId}&token=${token}`;
+                const url = `${API.addRoles}&roles=${roleId}&token=${token}`;
                 const response = await fetch(url);
                 const text = await response.text();
                 console.log('Ответ addRole2 (одиночная):', text);
@@ -2452,10 +2452,10 @@
                     return false;
                 }
                 const rolesStr = roleIds.join(',');
-                const url = `${API.addRole2}&role=${rolesStr}&token=${token}`;
+                const url = `${API.addRoles}&roles=${rolesStr}&token=${token}`;
                 const response = await fetch(url);
                 const text = await response.text();
-                console.log('Ответ addRole2 (массовая):', text);
+                console.log('Ответ addRoles (массовая):', text);
 
                 if (response.ok) {
                     try {
