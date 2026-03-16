@@ -2572,14 +2572,11 @@
                     return false;
                 }
                 try {
-                    const body = JSON.stringify({ comment: text, message: text, content: text });
-                    const response = await fetch(`${API.sendReview}&token=${token}&rating=${rating}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: body
-                    });
+                    const encodedComment = encodeURIComponent(text);
+                    const url = `${API.sendReview}&token=${token}&rating=${rating}&comment=${encodedComment}`;
+                    const response = await fetch(url);
                     const responseText = await response.text();
-                    console.log('Ответ sendReview:', responseText);
+                    console.log('Ответ sendReview (GET):', responseText);
 
                     if (!response.ok) {
                         throw new Error(`HTTP ${response.status}`);
