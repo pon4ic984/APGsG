@@ -14,6 +14,7 @@
     <link rel="manifest" href="/site.webmanifest" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
+        /* ---------- Все стили полностью из исходного файла v1pp.html ---------- */
         *,
         *::before,
         *::after {
@@ -1686,7 +1687,6 @@
         }
     </style>
 </head>
-
 <body>
     <div class="bg-effects">
         <div class="bg-orb bg-orb-1"></div>
@@ -1977,7 +1977,7 @@
                         <div class="form-group">
                             <textarea id="feedback-message" placeholder="Ваш комментарий..." rows="3" required></textarea>
                         </div>
-                        <button class="btn btn-primary" id="submitFeedback" disabled><i class="fas fa-paper-plane"></i> В разработке</button>
+                        <button class="btn btn-primary" id="submitFeedback" disabled><i class="fas fa-paper-plane"></i> Отправить отзыв</button>
                         <p class="auth-message"></p>
                     </div>
                     <div class="comments-list" id="commentsList">
@@ -2057,7 +2057,7 @@
                 CLIENT_ID: '911925216421236776',
                 REDIRECT_URI: 'https://search.apgsg.ru/',
                 API_BASE_URL: 'https://441940.site.bot-hosting.cloud',
-                FEEDBACK_WEBHOOK_URL: 'https://discord.com/api/webhooks/...', // ЗАМЕНИТЕ
+                FEEDBACK_WEBHOOK_URL: '',
                 ADMIN_IDS: ['1033615399763320862', '665566492158590976']
             };
 
@@ -2066,18 +2066,19 @@
                 total: `${CONFIG.API_BASE_URL}/MARAZMUS?question=PITotal`,
                 inGame: `${CONFIG.API_BASE_URL}/MARAZMUS?question=PIInGame`,
                 roles: `${CONFIG.API_BASE_URL}/MARAZMUS?question=SendRoles`,
-                addRole: `${CONFIG.API_BASE_URL}/MARAZMUS?question=addRole`,
-                addRole2: `${CONFIG.API_BASE_URL}/MARAZMUS?question=addRole2`
+                addRole2: `${CONFIG.API_BASE_URL}/MARAZMUS?question=addRole2`,
+                authorize: `${CONFIG.API_BASE_URL}/MARAZMUS?question=authorize`,
+                getReviews: `${CONFIG.API_BASE_URL}/MARAZMUS?question=getReviews`,
+                sendReview: `${CONFIG.API_BASE_URL}/MARAZMUS?question=sendReview`
             };
 
             let currentUser = null;
-            let refreshToken = null;
+            let token = null;
             let discordCode = null;
             let gamesList = [];
             let selectedGames = new Set();
             let comments = [];
 
-            // ---------- ЗАГРУЗКА ИЗ STORAGE ----------
             function loadFromStorage() {
                 const savedUser = localStorage.getItem('apgsg_user');
                 if (savedUser) {
@@ -2087,9 +2088,9 @@
                         localStorage.removeItem('apgsg_user');
                     }
                 }
-                const savedRefresh = localStorage.getItem('apgsg_refresh');
-                if (savedRefresh) {
-                    refreshToken = savedRefresh;
+                const savedToken = localStorage.getItem('apgsg_token');
+                if (savedToken) {
+                    token = savedToken;
                 }
                 const savedCode = localStorage.getItem('discord_code');
                 if (savedCode) {
@@ -2101,8 +2102,36 @@
                     discordCode = code;
                     localStorage.setItem('discord_code', code);
                     window.history.replaceState({}, document.title, window.location.pathname);
+                    authorizeWithCode(code);
                 }
                 updateAuthUI();
+            }
+
+            async function authorizeWithCode(code) {
+                try {
+                    const response = await fetch(`${API.authorize}&oAuth2code=${code}`);
+                    if (!response.ok) throw new Error('Ошибка авторизации');
+                    const data = await response.json();
+                    if (data.token && data.userID) {
+                        token = data.token;
+                        currentUser = {
+                            id: data.userID,
+                            username: data.username,
+                            avatar: null
+                        };
+                        localStorage.setItem('apgsg_token', token);
+                        localStorage.setItem('apgsg_user', JSON.stringify(currentUser));
+                        localStorage.removeItem('discord_code');
+                        discordCode = null;
+                        showNotif('✅ Успешный вход', `Привет, ${data.username}!`);
+                        updateAuthUI();
+                    } else {
+                        throw new Error('Некорректный ответ сервера');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    showNotif('❌ Ошибка', 'Не удалось авторизоваться');
+                }
             }
 
             function login() {
@@ -2112,10 +2141,10 @@
 
             function logout() {
                 currentUser = null;
-                refreshToken = null;
+                token = null;
                 discordCode = null;
                 localStorage.removeItem('apgsg_user');
-                localStorage.removeItem('apgsg_refresh');
+                localStorage.removeItem('apgsg_token');
                 localStorage.removeItem('discord_code');
                 updateAuthUI();
             }
@@ -2135,7 +2164,7 @@
                 if (currentUser) {
                     authSection.innerHTML = `
                         <div class="user-info" style="display:flex; align-items:center; gap:8px;">
-                            <img src="https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png" alt="avatar" style="width:28px; height:28px; border-radius:50%;" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
+                            <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="avatar" style="width:28px; height:28px; border-radius:50%;">
                             <span>${escapeHtml(currentUser.username)}</span>
                             <button class="btn-logout" id="logoutBtn" style="background:rgba(255,255,255,0.1); border:1px solid var(--dark-border); color:var(--text-secondary); padding:6px 12px; border-radius:var(--radius-sm); cursor:pointer;">Выйти</button>
                         </div>
@@ -2152,14 +2181,6 @@
                         });
                         document.querySelector('.user-info').appendChild(adminLink);
                     }
-                } else if (refreshToken) {
-                    authSection.innerHTML = `
-                        <div class="user-info" style="display:flex; align-items:center; gap:8px;">
-                            <span style="color: var(--accent);">✅ Авторизовано</span>
-                            <button class="btn-logout" id="logoutBtn" style="background:rgba(255,255,255,0.1); border:1px solid var(--dark-border); color:var(--text-secondary); padding:6px 12px; border-radius:var(--radius-sm); cursor:pointer;">Выйти</button>
-                        </div>
-                    `;
-                    document.getElementById('logoutBtn').addEventListener('click', logout);
                 } else if (discordCode) {
                     authSection.innerHTML = `
                         <div class="user-info" style="display:flex; align-items:center; gap:8px;">
@@ -2190,7 +2211,6 @@
                 }
             }
 
-            // ---------- ПОЛУЧЕНИЕ СТАТИСТИКИ ----------
             async function fetchStats() {
                 try {
                     const [onlineRes, totalRes, inGameRes] = await Promise.all([
@@ -2231,7 +2251,6 @@
                 }
             }
 
-            // ---------- ПОЛУЧЕНИЕ СПИСКА ИГР ----------
             async function fetchGames() {
                 try {
                     const response = await fetch(API.roles);
@@ -2333,7 +2352,7 @@
             }
 
             function openGamePopup(game) {
-                if (!currentUser && !refreshToken && !discordCode) {
+                if (!currentUser && !token && !discordCode) {
                     showNotif('🔒 Требуется вход', 'Сначала авторизуйтесь через Discord');
                     login();
                     return;
@@ -2352,48 +2371,23 @@
                 document.getElementById('bulkAssignBtn').disabled = count === 0;
             }
 
-            // ---------- ВЫДАЧА ОДНОЙ РОЛИ ----------
             async function assignSingleRole(roleId) {
-                let url;
-                if (refreshToken) {
-                    url = `${API.addRole2}&role=${roleId}&refreshToken=${refreshToken}`;
-                } else if (discordCode) {
-                    url = `${API.addRole}&role=${roleId}&oAuth2code=${discordCode}`;
-                } else {
+                if (!token) {
                     showNotif('🔒 Требуется вход', 'Сначала авторизуйтесь через Discord');
                     return false;
                 }
-
+                const url = `${API.addRole2}&role=${roleId}&token=${token}`;
                 const response = await fetch(url);
                 const text = await response.text();
 
                 if (response.ok) {
-                    let data = null;
                     try {
-                        data = JSON.parse(text);
+                        const data = JSON.parse(text);
+                        if (data.token) {
+                            token = data.token;
+                            localStorage.setItem('apgsg_token', token);
+                        }
                     } catch (e) {}
-
-                    if (data && typeof data === 'object') {
-                        if (data.refreshToken) {
-                            refreshToken = data.refreshToken;
-                            localStorage.setItem('apgsg_refresh', refreshToken);
-                        }
-                        if (data.user) {
-                            currentUser = data.user;
-                            localStorage.setItem('apgsg_user', JSON.stringify(currentUser));
-                        }
-                        if (discordCode) {
-                            localStorage.removeItem('discord_code');
-                            discordCode = null;
-                        }
-                    } else {
-                        if (!refreshToken && discordCode && text.length > 0 && !text.toLowerCase().includes('request acknowledged')) {
-                            refreshToken = text.trim();
-                            localStorage.setItem('apgsg_refresh', refreshToken);
-                            localStorage.removeItem('discord_code');
-                            discordCode = null;
-                        }
-                    }
                     return true;
                 } else {
                     if (response.status === 400 || response.status === 500 || text.includes('invalid')) {
@@ -2407,33 +2401,24 @@
                 }
             }
 
-            // ---------- МАССОВАЯ ВЫДАЧА ----------
             async function assignMultipleRoles(roleIds) {
-                if (!refreshToken) {
-                    showNotif('❌ Ошибка', 'Нет refreshToken для массовой выдачи');
+                if (!token) {
+                    showNotif('❌ Ошибка', 'Нет токена для массовой выдачи');
                     return false;
                 }
                 const rolesStr = roleIds.join(',');
-                const url = `${API.addRole2}&role=${rolesStr}&refreshToken=${refreshToken}`;
+                const url = `${API.addRole2}&role=${rolesStr}&token=${token}`;
                 const response = await fetch(url);
                 const text = await response.text();
 
                 if (response.ok) {
-                    let data = null;
                     try {
-                        data = JSON.parse(text);
+                        const data = JSON.parse(text);
+                        if (data.token) {
+                            token = data.token;
+                            localStorage.setItem('apgsg_token', token);
+                        }
                     } catch (e) {}
-
-                    if (data && typeof data === 'object') {
-                        if (data.refreshToken) {
-                            refreshToken = data.refreshToken;
-                            localStorage.setItem('apgsg_refresh', refreshToken);
-                        }
-                        if (data.user) {
-                            currentUser = data.user;
-                            localStorage.setItem('apgsg_user', JSON.stringify(currentUser));
-                        }
-                    }
                     return true;
                 } else {
                     if (response.status === 400 || response.status === 500 || text.includes('invalid')) {
@@ -2447,7 +2432,6 @@
                 }
             }
 
-            // ---------- ОБРАБОТЧИК ДЛЯ ОДИНОЧНОЙ ВЫДАЧИ ИЗ ПОПАПА ----------
             async function assignRoleFromPopup() {
                 if (!currentGame) return;
                 const btn = document.getElementById('connectToGame');
@@ -2467,12 +2451,10 @@
                 btn.disabled = false;
             }
 
-            // ---------- МАССОВАЯ ВЫДАЧА ПО ЧЕКБОКСАМ ----------
             async function bulkAssignRoles() {
                 if (selectedGames.size === 0) return;
 
-                // Если есть refreshToken, сразу выдаём всё одной пачкой
-                if (refreshToken) {
+                if (token) {
                     const btn = document.getElementById('bulkAssignBtn');
                     const original = btn.innerHTML;
                     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Выдача...';
@@ -2493,45 +2475,60 @@
                     return;
                 }
 
-                // Если есть discordCode (первый вход), сначала получаем refreshToken через первую роль
                 if (discordCode) {
-                    const roleIds = Array.from(selectedGames);
-                    const firstRole = roleIds[0];
-                    const remainingRoles = roleIds.slice(1);
-
-                    const btn = document.getElementById('bulkAssignBtn');
-                    const original = btn.innerHTML;
-                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Выдача...';
-                    btn.disabled = true;
-
-                    const firstSuccess = await assignSingleRole(firstRole);
-                    if (!firstSuccess) {
-                        btn.innerHTML = original;
-                        btn.disabled = false;
-                        return;
-                    }
-
-                    if (remainingRoles.length > 0) {
-                        const success = await assignMultipleRoles(remainingRoles);
-                        if (success) {
-                            showNotif('✅ Готово', `Все роли выданы (${roleIds.length})`);
-                        }
-                    } else {
-                        showNotif('✅ Готово', `Роль выдана`);
-                    }
-
-                    document.querySelectorAll('.game-checkbox input:checked').forEach(cb => cb.checked = false);
-                    selectedGames.clear();
-                    updateSelectedCount();
-                    updateAuthUI();
-
-                    btn.innerHTML = original;
-                    btn.disabled = false;
+                    showNotif('⏳ Ожидание', 'Завершите авторизацию');
+                    authorizeWithCode(discordCode);
                     return;
                 }
 
                 showNotif('🔒 Требуется вход', 'Сначала авторизуйтесь через Discord');
                 login();
+            }
+
+            async function fetchReviews() {
+                try {
+                    const response = await fetch(API.getReviews);
+                    if (!response.ok) throw new Error('Ошибка загрузки отзывов');
+                    const data = await response.json();
+                    comments = data.map((item, index) => ({
+                        id: item.id || index,
+                        userId: item.userId || 'unknown',
+                        userName: item.userName || 'Аноним',
+                        rating: item.rating || 5,
+                        comment: item.comment || '',
+                        date: item.date || new Date().toLocaleString(),
+                        banned: false
+                    }));
+                    renderComments();
+                    updateAverageRating();
+                } catch (err) {
+                    console.error('Ошибка загрузки отзывов:', err);
+                }
+            }
+
+            async function submitReview(rating, text) {
+                if (!token) {
+                    showNotif('🔒 Требуется вход', 'Войдите через Discord');
+                    return false;
+                }
+                try {
+                    const response = await fetch(`${API.sendReview}&token=${token}&rating=${rating}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ comment: text })
+                    });
+                    if (!response.ok) throw new Error('Ошибка отправки');
+                    const data = await response.json();
+                    if (data.token) {
+                        token = data.token;
+                        localStorage.setItem('apgsg_token', token);
+                    }
+                    return true;
+                } catch (err) {
+                    console.error(err);
+                    showNotif('❌ Ошибка', 'Не удалось отправить отзыв');
+                    return false;
+                }
             }
 
             function showNotif(title, text) {
@@ -2552,7 +2549,6 @@
                 }[m]));
             }
 
-            // ---------- ЗВЁЗДЫ РЕЙТИНГА ----------
             function initRatingStars() {
                 const stars = document.querySelectorAll('.rating-input .star');
                 const ratingValue = document.querySelector('.rating-value');
@@ -2571,32 +2567,6 @@
             function resetStars() {
                 document.querySelectorAll('.rating-input .star').forEach(s => s.classList.remove('active'));
                 document.querySelector('.rating-value').textContent = '0/5';
-            }
-
-            // ---------- КОММЕНТАРИИ ----------
-            function loadComments() {
-                const saved = localStorage.getItem('apgsg_comments');
-                comments = saved ? JSON.parse(saved) : [{
-                        id: '1',
-                        userId: 'admin',
-                        userName: 'кодер',
-                        rating: 5,
-                        comment: 'Заставили похать 3 дня!',
-                        date: '2026-03-14 15:30',
-                        banned: false
-                    },
-                    {
-                        id: '2',
-                        userId: 'user2',
-                        userName: 'AlexeyPG',
-                        rating: 5,
-                        comment: 'Я не заплатил кодеру а он обэтом не знает!.',
-                        date: '2026-03-13 10:15',
-                        banned: false
-                    },
-                ];
-                renderComments();
-                updateAverageRating();
             }
 
             function renderComments() {
@@ -2661,37 +2631,12 @@
                     showNotif('⛔ Вы забанены', 'Вы не можете оставлять отзывы');
                     return;
                 }
-                const newComment = {
-                    id: Date.now().toString(),
-                    userId: currentUser.id,
-                    userName: currentUser.username,
-                    rating: rating,
-                    comment: text,
-                    date: new Date().toLocaleString('ru-RU', {
-                        hour12: false
-                    }),
-                    banned: false
-                };
-                comments.unshift(newComment);
-                if (comments.length > 50) comments.pop();
-                localStorage.setItem('apgsg_comments', JSON.stringify(comments));
-                renderComments();
-                updateAverageRating();
-                document.getElementById('feedback-message').value = '';
-                resetStars();
-                showNotif('✅ Спасибо!', 'Ваш отзыв добавлен');
-                try {
-                    await fetch(CONFIG.FEEDBACK_WEBHOOK_URL, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            content: `**Новый отзыв**\n**Оценка:** ${rating}/5\n**От:** ${currentUser.username}\n**Сообщение:** ${text}`
-                        })
-                    });
-                } catch (err) {
-                    console.warn('Не удалось отправить в вебхук', err);
+                const success = await submitReview(rating, text);
+                if (success) {
+                    showNotif('✅ Спасибо!', 'Ваш отзыв добавлен');
+                    document.getElementById('feedback-message').value = '';
+                    resetStars();
+                    await fetchReviews();
                 }
             });
 
@@ -2738,7 +2683,6 @@
                 document.getElementById('adminPanel').style.display = 'none';
             });
 
-            // ---------- ИНИЦИАЛИЗАЦИЯ ----------
             function initGameSearch() {
                 document.getElementById('gameSearch').addEventListener('input', function(e) {
                     const q = e.target.value.toLowerCase();
@@ -2801,9 +2745,7 @@
                     entries.forEach(entry => {
                         if (entry.isIntersecting) entry.target.classList.add('visible');
                     });
-                }, {
-                    threshold: 0.1
-                });
+                }, { threshold: 0.1 });
                 document.querySelectorAll('.fade-up, .stagger').forEach(el => observer.observe(el));
             }
 
@@ -2817,10 +2759,7 @@
             function initScrollTop() {
                 const btn = document.getElementById('scrollTop');
                 window.addEventListener('scroll', () => btn.classList.toggle('visible', window.pageYOffset > 400));
-                btn.addEventListener('click', () => window.scrollTo({
-                    top: 0,
-                    behavior: 'smooth'
-                }));
+                btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
             }
 
             function initSmoothScroll() {
@@ -2828,9 +2767,7 @@
                     link.addEventListener('click', e => {
                         e.preventDefault();
                         const target = document.querySelector(link.getAttribute('href'));
-                        if (target) target.scrollIntoView({
-                            behavior: 'smooth'
-                        });
+                        if (target) target.scrollIntoView({ behavior: 'smooth' });
                     });
                 });
             }
@@ -2852,9 +2789,7 @@
                 document.querySelectorAll('.footer-col a[data-tab]').forEach(link => {
                     link.addEventListener('click', e => {
                         e.preventDefault();
-                        document.getElementById('info').scrollIntoView({
-                            behavior: 'smooth'
-                        });
+                        document.getElementById('info').scrollIntoView({ behavior: 'smooth' });
                         setTimeout(() => {
                             const tab = document.querySelector(`.info-tab[data-tab="${link.dataset.tab}"]`);
                             if (tab) tab.click();
@@ -2891,10 +2826,10 @@
                 initGameSearch();
                 initRandomTeam();
                 initRatingStars();
-                loadComments();
                 loadFromStorage();
                 fetchStats();
                 fetchGames();
+                fetchReviews();
                 addRefreshButton();
                 setInterval(fetchStats, 30000);
 
@@ -2912,10 +2847,9 @@
                 });
 
                 document.querySelector('.footer-bottom p').innerHTML =
-                    `&copy; ${new Date().getFullYear()} APGsG Gaming Community. Все права морально защищены.`;
+                    `&copy; ${new Date().getFullYear()} APGsG Gaming Community. Все права защищены.`;
             });
         })();
     </script>
 </body>
-
 </html>
