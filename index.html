@@ -2551,8 +2551,8 @@
                             id: extractField(item, ['id', 'reviewId', 'commentId']) || index,
                             userId: extractField(item, ['userId', 'userID', 'authorId', 'id']) || 'unknown',
                             userName: extractField(item, ['userName', 'username', 'author', 'name']) || 'Аноним',
-                            rating: extractField(item, ['rating', 'score', 'stars']) || 5,
-                            comment: extractField(item, ['comment', 'text', 'message', 'content']) || '',
+                            rating: extractField(item, ['rating', 'score', 'stars']) || 6,
+                            comment: extractField(item, ['comment', 'text', 'message', 'content']) || 'сайт топ!',
                             date: extractField(item, ['date', 'createdAt', 'timestamp', 'time']) || new Date().toLocaleString(),
                             banned: false
                         };
