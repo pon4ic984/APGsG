@@ -1473,95 +1473,83 @@
                 }
             }
 
-            // ИСПРАВЛЕННАЯ ФУНКЦИЯ submitReview (один POST без preflight)
+            // ОТПРАВКА ОТЗЫВА: token и rating в query, в body только raw text
             async function submitReview(rating, text) {
                 if (!token) {
                     showNotif('🔒 Требуется вход', 'Войдите через Discord');
                     return false;
                 }
-                const cleanText = (text || '').trim();
-                if (!cleanText) {
+                const reviewText = String(text || '').trim();
+                if (!reviewText) {
                     showNotif('⚠️ Пустой отзыв', 'Введите текст отзыва');
                     return false;
                 }
-                if (cleanText.length > 1500) {
+                if (reviewText.length > 1500) {
                     alert('Комментарий слишком длинный (макс. 1500 символов)');
                     return false;
                 }
-
                 return new Promise((resolve) => {
-                    const url = API.sendReview;
+                    const url = `${API.sendReview}&token=${encodeURIComponent(token)}&rating=${encodeURIComponent(String(rating))}`;
                     const xhr = new XMLHttpRequest();
                     xhr.open('POST', url, true);
-                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded;charset=UTF-8');
+                    xhr.setRequestHeader('Content-Type', 'text/plain;charset=UTF-8');
 
                     xhr.onload = function() {
-                        let responseText = '';
-                        try {
-                            responseText = xhr.responseText || '';
-                        } catch (e) {}
-
+                        const responseText = xhr.responseText || '';
                         if (xhr.status >= 200 && xhr.status < 300) {
-                            let data = null;
-                            if (responseText) {
-                                try {
-                                    data = JSON.parse(responseText);
-                                } catch (e) {
-                                    data = null;
-                                }
-                            }
-
+                            let parsed = null;
                             try {
-                                const newToken = data ? extractField(data, ['token', 'accessToken', 'refreshToken']) : null;
+                                parsed = responseText ? JSON.parse(responseText) : null;
+                            } catch (e) {}
+
+                            if (parsed) {
+                                const newToken = extractField(parsed, ['token', 'accessToken', 'refreshToken']);
                                 if (newToken) {
                                     token = newToken;
                                     localStorage.setItem('apgsg_token', token);
                                 }
 
-                                const newReview = data ? (data.review || data.comment || data.data || data) : null;
-                                if (newReview && typeof newReview === 'object' && (newReview.authorID || newReview.authorId || newReview.userId || newReview.userID)) {
-                                    const reviewObj = {
-                                        id: extractField(newReview, ['reviewId', 'reviewID', 'id', 'commentId']) || 'temp-' + Date.now(),
-                                        userId: extractField(newReview, ['authorID', 'authorId', 'userId', 'userID']) || (currentUser ? currentUser.id : 'me'),
-                                        userName: extractField(newReview, ['authorName', 'userName', 'username']) || (currentUser ? currentUser.username : 'Вы'),
-                                        rating: Number(extractField(newReview, ['rating'])) || Number(rating) || 5,
-                                        comment: extractField(newReview, ['reviewText', 'comment', 'text', 'message']) || cleanText,
-                                        date: extractField(newReview, ['timestamp', 'date']) ? new Date(extractField(newReview, ['timestamp', 'date'])).toLocaleString() : new Date().toLocaleString(),
-                                        likes: Number(extractField(newReview, ['likes', 'likeCount'])) || 0,
-                                        dislikes: Number(extractField(newReview, ['dislikes', 'dislikeCount'])) || 0,
-                                        myRating: 'none'
-                                    };
-                                    comments.unshift(reviewObj);
-                                    renderComments();
-                                    updateAverageRating();
-                                } else {
+                                try {
+                                    const newReview = parsed.review || parsed.comment || parsed;
+                                    if (newReview && typeof newReview === 'object') {
+                                        const reviewObj = {
+                                            id: extractField(newReview, ['reviewId', 'id']) || 'temp-' + Date.now(),
+                                            userId: extractField(newReview, ['authorID', 'authorId']) || (currentUser && currentUser.id) || 'me',
+                                            userName: extractField(newReview, ['authorName', 'userName']) || (currentUser && currentUser.username) || 'Вы',
+                                            rating: extractField(newReview, ['rating']) || rating,
+                                            comment: extractField(newReview, ['reviewText', 'comment', 'text']) || reviewText,
+                                            date: extractField(newReview, ['timestamp']) ? new Date(extractField(newReview, ['timestamp'])).toLocaleString() : new Date().toLocaleString(),
+                                            likes: extractField(newReview, ['likes']) || 0,
+                                            dislikes: extractField(newReview, ['dislikes']) || 0,
+                                            myRating: 'none'
+                                        };
+                                        comments.unshift(reviewObj);
+                                        renderComments();
+                                        updateAverageRating();
+                                    } else {
+                                        fetchReviews();
+                                    }
+                                } catch (e) {
                                     fetchReviews();
                                 }
-                            } catch (e) {
+                            } else {
                                 fetchReviews();
                             }
-
-                            showNotif('✅ Отзыв отправлен', 'Спасибо за ваш отзыв');
                             resolve(true);
                         } else {
                             console.error('Ошибка отправки отзыва:', xhr.status, responseText);
-                            showNotif('❌ Ошибка', 'Не удалось отправить отзыв');
+                            showNotif('❌ Ошибка', responseText || 'Не удалось отправить отзыв');
                             resolve(false);
                         }
                     };
 
                     xhr.onerror = function() {
-                        console.error('Сетевая ошибка при отправке отзыва');
-                        showNotif('❌ Ошибка', 'Сетевая ошибка при отправке отзыва');
+                        console.error('Сетевая ошибка');
+                        showNotif('❌ Ошибка', 'Сетевая ошибка');
                         resolve(false);
                     };
 
-                    const payload = new URLSearchParams();
-                    payload.set('token', token);
-                    payload.set('rating', String(rating));
-                    payload.set('comment', cleanText);
-
-                    xhr.send(payload.toString());
+                    xhr.send(reviewText);
                 });
             }
 
