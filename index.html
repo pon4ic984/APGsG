@@ -1693,94 +1693,6 @@
                 }
             }
 
-            // Совместимая отправка отзыва без CORS-preflight
-
-            function waitMs(ms) {
-                return new Promise(resolve => setTimeout(resolve, ms));
-            }
-
-            function cleanupTransportNode(node) {
-                if (!node) return;
-                setTimeout(() => {
-                    try { node.remove(); } catch (e) {}
-                }, 1500);
-            }
-
-            function postReviewThroughHiddenForm(rating, text) {
-                return new Promise((resolve) => {
-                    const frame = document.createElement('iframe');
-                    const frameName = 'review_submit_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-                    frame.name = frameName;
-                    frame.style.display = 'none';
-
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = API.sendReview;
-                    form.target = frameName;
-                    form.style.display = 'none';
-                    form.acceptCharset = 'UTF-8';
-
-                    const fields = {
-                        token,
-                        rating: String(rating),
-                        comment: text,
-                        text,
-                        reviewText: text,
-                        review: text,
-                        message: text
-                    };
-
-                    Object.entries(fields).forEach(([key, value]) => {
-                        const input = document.createElement('input');
-                        input.type = 'hidden';
-                        input.name = key;
-                        input.value = value == null ? '' : String(value);
-                        form.appendChild(input);
-                    });
-
-                    let settled = false;
-                    const finish = (value) => {
-                        if (settled) return;
-                        settled = true;
-                        cleanupTransportNode(form);
-                        cleanupTransportNode(frame);
-                        resolve(value);
-                    };
-
-                    frame.addEventListener('load', () => finish(true), { once: true });
-                    document.body.appendChild(frame);
-                    document.body.appendChild(form);
-
-                    try {
-                        form.submit();
-                    } catch (err) {
-                        console.warn('Не удалось отправить отзыв через форму:', err);
-                        finish(false);
-                        return;
-                    }
-
-                    setTimeout(() => finish(true), 1800);
-                });
-            }
-
-            function fireReviewGetFallback(rating, text) {
-                return new Promise((resolve) => {
-                    const frame = document.createElement('iframe');
-                    frame.style.display = 'none';
-                    frame.src = `${API.sendReview}&token=${encodeURIComponent(token)}&rating=${encodeURIComponent(rating)}&comment=${encodeURIComponent(text)}&text=${encodeURIComponent(text)}&reviewText=${encodeURIComponent(text)}&review=${encodeURIComponent(text)}&message=${encodeURIComponent(text)}`;
-                    let settled = false;
-                    const finish = (value) => {
-                        if (settled) return;
-                        settled = true;
-                        cleanupTransportNode(frame);
-                        resolve(value);
-                    };
-                    frame.addEventListener('load', () => finish(true), { once: true });
-                    document.body.appendChild(frame);
-                    setTimeout(() => finish(true), 1800);
-                });
-            }
-
             function hasFreshReview(targetText) {
                 const expectedText = (targetText || '').trim().toLowerCase();
                 if (!expectedText) return false;
@@ -1792,10 +1704,10 @@
             }
 
             async function syncReviewsAfterSubmit(targetText) {
-                await waitMs(1200);
+                await new Promise(resolve => setTimeout(resolve, 700));
                 await fetchReviews({ silent: true });
                 if (hasFreshReview(targetText)) return true;
-                await waitMs(1800);
+                await new Promise(resolve => setTimeout(resolve, 1200));
                 await fetchReviews({ silent: true });
                 return hasFreshReview(targetText);
             }
@@ -1812,37 +1724,85 @@
 
                 setReviewStatus('Отправляю отзыв...', 'loading');
 
-                try {
-                    const posted = await postReviewThroughHiddenForm(rating, text);
-                    if (posted) {
-                        const synced = await syncReviewsAfterSubmit(text);
-                        if (synced) {
-                            setReviewStatus('Отзыв отправлен и появился в списке.', 'success');
-                            showNotif('✅ Готово', 'Отзыв отправлен');
-                            return true;
-                        }
-                    }
-                } catch (err) {
-                    console.warn('POST-отправка отзыва не удалась:', err);
-                }
+                const payload = {
+                    token,
+                    rating,
+                    comment: text
+                };
 
                 try {
-                    const fired = await fireReviewGetFallback(rating, text);
-                    if (fired) {
-                        const synced = await syncReviewsAfterSubmit(text);
-                        if (synced) {
-                            setReviewStatus('Отзыв отправлен и появился в списке.', 'success');
-                            showNotif('✅ Готово', 'Отзыв отправлен');
-                            return true;
+                    const response = await fetch(API.sendReview, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json, text/plain, */*'
+                        },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const raw = await response.text();
+                    let data = null;
+
+                    try {
+                        data = raw ? JSON.parse(raw) : null;
+                    } catch (e) {
+                        data = raw;
+                    }
+
+                    if (!response.ok) {
+                        console.error('Ошибка отправки отзыва:', response.status, data || raw);
+                        const serverMessage = data && typeof data === 'object'
+                            ? extractField(data, ['message', 'error', 'details'])
+                            : null;
+                        showNotif('❌ Ошибка', serverMessage || 'Не удалось отправить отзыв');
+                        setReviewStatus(serverMessage || `Сервер вернул ошибку ${response.status}.`, 'error');
+                        return false;
+                    }
+
+                    if (data && typeof data === 'object') {
+                        const newToken = extractField(data, ['token', 'accessToken', 'refreshToken']);
+                        if (newToken) {
+                            token = newToken;
+                            localStorage.setItem('apgsg_token', token);
+                        }
+
+                        try {
+                            const newReview = data.review || data.comment || data;
+                            if (newReview && typeof newReview === 'object' && (newReview.authorID || newReview.authorId || newReview.userId || newReview.userID)) {
+                                const reviewObj = {
+                                    id: extractField(newReview, ['reviewId', 'id']) || 'temp-' + Date.now(),
+                                    userId: extractField(newReview, ['authorID', 'authorId', 'userId', 'userID']) || (currentUser ? currentUser.id : null),
+                                    userName: extractField(newReview, ['authorName', 'userName', 'username']) || (currentUser ? currentUser.username : 'Вы'),
+                                    rating: extractField(newReview, ['rating']) || rating,
+                                    comment: extractField(newReview, ['reviewText', 'comment', 'text', 'message']) || text,
+                                    date: extractField(newReview, ['timestamp', 'date'])
+                                        ? new Date(extractField(newReview, ['timestamp', 'date'])).toLocaleString()
+                                        : new Date().toLocaleString(),
+                                    likes: Number(extractField(newReview, ['likes'])) || 0,
+                                    dislikes: Number(extractField(newReview, ['dislikes'])) || 0,
+                                    myRating: extractField(newReview, ['myRating']) || 'none'
+                                };
+
+                                comments = comments.filter(item => !(reviewObj.userId && item.userId && String(item.userId) === String(reviewObj.userId) && String(item.comment || '').trim().toLowerCase() === String(reviewObj.comment || '').trim().toLowerCase()));
+                                comments.unshift(reviewObj);
+                                renderComments();
+                                updateAverageRating();
+                            }
+                        } catch (e) {
+                            console.warn('Не удалось локально вставить новый отзыв:', e);
                         }
                     }
-                } catch (err) {
-                    console.warn('GET-fallback отзыва не удался:', err);
-                }
 
-                showNotif('❌ Ошибка', 'Не удалось отправить отзыв');
-                setReviewStatus('Сервер не принял отзыв. Скорее всего, нужен фикс на бэке для sendReview или same-origin прокси.', 'error');
-                return false;
+                    await syncReviewsAfterSubmit(text);
+                    setReviewStatus('Отзыв отправлен.', 'success');
+                    showNotif('✅ Готово', 'Отзыв отправлен');
+                    return true;
+                } catch (err) {
+                    console.error('Попытка отправки отзыва не удалась:', err);
+                    showNotif('❌ Ошибка', 'Не удалось отправить отзыв');
+                    setReviewStatus('Не удалось отправить отзыв. Проверь сервер или CORS.', 'error');
+                    return false;
+                }
             }
 
             async function deleteMyReview(reviewId) {
