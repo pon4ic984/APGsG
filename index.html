@@ -316,6 +316,28 @@
         .feedback-form button { width:100%; justify-content:center; margin-top:0.5rem; }
         .auth-message { color:var(--text-muted); font-size:0.8rem; margin-top:0.5rem; text-align:center; }
 
+        .review-toolbar { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px; margin:0 0 1rem; padding:1rem 1.1rem; border:1px solid var(--dark-border); border-radius:var(--radius-md); background:rgba(255,255,255,0.02); }
+        .reviews-meta { display:flex; flex-wrap:wrap; gap:10px; align-items:center; color:var(--text-secondary); font-size:0.92rem; }
+        .review-meta-pill { display:inline-flex; align-items:center; gap:6px; padding:8px 12px; border-radius:999px; background:rgba(108,92,231,0.12); border:1px solid rgba(108,92,231,0.22); }
+        .review-actions-row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+        .review-filter-btn, .page-btn, .vote-btn { background:rgba(255,255,255,0.06); border:1px solid var(--dark-border); color:var(--text-secondary); padding:8px 12px; border-radius:10px; cursor:pointer; transition:var(--transition); }
+        .review-filter-btn:hover, .page-btn:hover, .vote-btn:hover { border-color:var(--primary-light); color:var(--text-primary); transform:translateY(-1px); }
+        .review-filter-btn.active, .page-btn.active, .vote-btn.active { background:rgba(108,92,231,0.18); border-color:rgba(108,92,231,0.45); color:var(--text-primary); }
+        .review-sort { min-width:180px; background:var(--dark-bg); color:var(--text-primary); border:1px solid var(--dark-border); border-radius:10px; padding:8px 12px; }
+        .review-status { min-height:22px; margin:0 0 1rem; color:var(--text-muted); font-size:0.9rem; }
+        .review-status.success { color:var(--accent); }
+        .review-status.error { color:#ff8b8b; }
+        .review-status.loading { color:var(--primary-light); }
+        .comments-list { display:flex; flex-direction:column; gap:1rem; }
+        .comments-empty, .comments-error { text-align:center; padding:1.4rem; border:1px dashed var(--dark-border); border-radius:var(--radius-md); color:var(--text-secondary); background:rgba(255,255,255,0.02); }
+        .comment-card.is-pending { opacity:0.75; border-style:dashed; }
+        .comment-footer { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px; margin-top:12px; }
+        .comment-votes { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+        .vote-count { color:var(--text-muted); font-size:0.88rem; }
+        .comment-author-badge { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; background:rgba(0,245,212,0.08); border:1px solid rgba(0,245,212,0.16); color:var(--accent); font-size:0.78rem; margin-left:8px; }
+        .comments-pagination { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:1rem; }
+        .comments-pagination:empty { display:none; }
+
         .comments-list { display:flex; flex-direction:column; gap:1rem; }
         .comment-card {
             background:var(--dark-card); border:1px solid var(--dark-border); border-radius:var(--radius-md);
@@ -824,14 +846,34 @@
                             <span class="rating-value">0/5</span>
                         </div>
                         <div class="form-group">
-                            <textarea id="feedback-message" placeholder="Ваш комментарий..." rows="3" required></textarea>
+                            <textarea id="feedback-message" placeholder="Напиши честный отзыв о сервере, атмосфере или поиске тиммейтов..." rows="4" maxlength="1500" required></textarea>
                         </div>
                         <button class="btn btn-primary" id="submitFeedback" disabled><i class="fas fa-paper-plane"></i> Отправить отзыв</button>
                         <p class="auth-message"></p>
                     </div>
+                    <div class="review-toolbar">
+                        <div class="reviews-meta">
+                            <span class="review-meta-pill"><i class="fas fa-comments"></i> <span id="reviewsTotal">0 отзывов</span></span>
+                            <span class="review-meta-pill"><i class="fas fa-clock"></i> <span id="reviewsLastSync">Синхронизация ещё не выполнялась</span></span>
+                        </div>
+                        <div class="review-actions-row">
+                            <button class="review-filter-btn active" type="button" data-review-filter="all">Все</button>
+                            <button class="review-filter-btn" type="button" data-review-filter="5">5 ★</button>
+                            <button class="review-filter-btn" type="button" data-review-filter="4">4 ★+</button>
+                            <select id="reviewSort" class="review-sort">
+                                <option value="date_desc">Новые сначала</option>
+                                <option value="date_asc">Старые сначала</option>
+                                <option value="rating_desc">Высокий рейтинг</option>
+                                <option value="rating_asc">Низкий рейтинг</option>
+                            </select>
+                            <button class="btn btn-secondary" id="refreshReviewsBtn" type="button"><i class="fas fa-sync-alt"></i> Обновить</button>
+                        </div>
+                    </div>
+                    <div class="review-status" id="reviewsStatus" aria-live="polite"></div>
                     <div class="comments-list" id="commentsList">
                         <div class="loading">Загрузка комментариев...</div>
                     </div>
+                    <div class="comments-pagination" id="reviewsPagination"></div>
                 </div>
             </div>
         </div>
@@ -951,6 +993,191 @@
             let comments = [];
             let filteredComments = []; // для админки
 
+            let reviewFilter = 'all';
+            let reviewSort = 'date_desc';
+            let reviewsCurrentPage = 1;
+            const REVIEWS_PER_PAGE = 6;
+            let reviewsLastSyncAt = null;
+
+            function setReviewStatus(text, type = '') {
+                const statusEl = document.getElementById('reviewsStatus');
+                if (!statusEl) return;
+                statusEl.className = `review-status${type ? ' ' + type : ''}`;
+                statusEl.textContent = text || '';
+            }
+
+            function updateLastSyncLabel() {
+                const syncEl = document.getElementById('reviewsLastSync');
+                if (!syncEl) return;
+                if (!reviewsLastSyncAt) {
+                    syncEl.textContent = 'Синхронизация ещё не выполнялась';
+                    return;
+                }
+                syncEl.textContent = `Обновлено ${reviewsLastSyncAt.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+            }
+
+            function updateReviewsTotalLabel(total) {
+                const totalEl = document.getElementById('reviewsTotal');
+                if (!totalEl) return;
+                const safeTotal = Number.isFinite(total) ? total : 0;
+                const word = safeTotal % 10 === 1 && safeTotal % 100 !== 11 ? 'отзыв' : (safeTotal % 10 >= 2 && safeTotal % 10 <= 4 && (safeTotal % 100 < 10 || safeTotal % 100 >= 20) ? 'отзыва' : 'отзывов');
+                totalEl.textContent = `${safeTotal} ${word}`;
+            }
+
+            function tryParseJson(raw) {
+                if (raw == null) return null;
+                if (typeof raw === 'object') return raw;
+                if (typeof raw !== 'string') return null;
+                const trimmed = raw.trim();
+                if (!trimmed) return null;
+                try { return JSON.parse(trimmed); } catch (e) {}
+                const start = Math.min(...['{', '['].map(ch => {
+                    const idx = trimmed.indexOf(ch);
+                    return idx === -1 ? Infinity : idx;
+                }));
+                if (Number.isFinite(start)) {
+                    const candidate = trimmed.slice(start);
+                    try { return JSON.parse(candidate); } catch (e) {}
+                }
+                return null;
+            }
+
+            function updateTokenIfPresent(payload) {
+                const newToken = extractField(payload, ['token', 'accessToken', 'access_token', 'refreshToken', 'refresh_token']);
+                if (newToken) {
+                    token = newToken;
+                    localStorage.setItem('apgsg_token', token);
+                }
+            }
+
+            function normalizeDateValue(value) {
+                if (value == null || value === '') {
+                    return { display: new Date().toLocaleString('ru-RU'), sortValue: Date.now() };
+                }
+                if (typeof value === 'number') {
+                    const ms = value < 1000000000000 ? value * 1000 : value;
+                    const d = new Date(ms);
+                    return { display: d.toLocaleString('ru-RU'), sortValue: d.getTime() };
+                }
+                if (typeof value === 'string') {
+                    const numeric = Number(value);
+                    if (!Number.isNaN(numeric) && value.trim() !== '') {
+                        return normalizeDateValue(numeric);
+                    }
+                    const parsed = Date.parse(value);
+                    if (!Number.isNaN(parsed)) {
+                        const d = new Date(parsed);
+                        return { display: d.toLocaleString('ru-RU'), sortValue: d.getTime() };
+                    }
+                    return { display: value, sortValue: Date.now() };
+                }
+                return { display: String(value), sortValue: Date.now() };
+            }
+
+            function normalizeReview(item, index = 0) {
+                const id = String(extractField(item, ['reviewId', 'reviewID', 'id', 'commentId', '_id']) || `temp-${Date.now()}-${index}`);
+                const userId = String(extractField(item, ['authorID', 'authorId', 'userId', 'userID', 'uid']) || 'unknown');
+                const userName = String(extractField(item, ['authorName', 'userName', 'username', 'author', 'name']) || 'Аноним');
+                const ratingRaw = Number(extractField(item, ['rating', 'stars', 'score']) || 5);
+                const rating = Number.isFinite(ratingRaw) ? Math.max(1, Math.min(5, ratingRaw)) : 5;
+                const comment = String(extractField(item, ['reviewText', 'comment', 'text', 'message', 'content']) || '').trim();
+                const likesRaw = Number(extractField(item, ['likes', 'likeCount', 'upvotes']) || 0);
+                const dislikesRaw = Number(extractField(item, ['dislikes', 'dislikeCount', 'downvotes']) || 0);
+                const myRating = String(extractField(item, ['myRating', 'userRating', 'vote']) || 'none');
+                const dateInfo = normalizeDateValue(extractField(item, ['timestamp', 'date', 'createdAt', 'time', 'created_at']));
+                return {
+                    id,
+                    userId,
+                    userName,
+                    rating,
+                    comment,
+                    date: dateInfo.display,
+                    dateSort: dateInfo.sortValue,
+                    likes: Number.isFinite(likesRaw) ? likesRaw : 0,
+                    dislikes: Number.isFinite(dislikesRaw) ? dislikesRaw : 0,
+                    myRating,
+                    pending: false
+                };
+            }
+
+            function extractReviewsArray(payload) {
+                if (!payload) return [];
+                if (Array.isArray(payload)) return payload;
+                const direct = extractField(payload, ['reviews', 'comments', 'data', 'items', 'list', 'result']);
+                if (Array.isArray(direct)) return direct;
+                if (typeof direct === 'string') {
+                    const parsed = tryParseJson(direct);
+                    if (Array.isArray(parsed)) return parsed;
+                    if (parsed && typeof parsed === 'object') return extractReviewsArray(parsed);
+                }
+                if (payload.review || payload.comment) {
+                    return [payload.review || payload.comment];
+                }
+                return [];
+            }
+
+            async function readResponsePayload(response) {
+                const text = await response.text();
+                const parsed = tryParseJson(text);
+                return {
+                    ok: response.ok,
+                    status: response.status,
+                    text,
+                    data: parsed
+                };
+            }
+
+            function getFilteredAndSortedComments() {
+                const bannedList = JSON.parse(localStorage.getItem('banned_users') || '[]');
+                let list = comments.filter(c => !bannedList.includes(c.userId));
+                if (reviewFilter === '5') {
+                    list = list.filter(c => Number(c.rating) === 5);
+                } else if (reviewFilter === '4') {
+                    list = list.filter(c => Number(c.rating) >= 4);
+                }
+                list.sort((a, b) => {
+                    switch (reviewSort) {
+                        case 'date_asc': return (a.dateSort || 0) - (b.dateSort || 0);
+                        case 'rating_desc': return Number(b.rating || 0) - Number(a.rating || 0) || (b.dateSort || 0) - (a.dateSort || 0);
+                        case 'rating_asc': return Number(a.rating || 0) - Number(b.rating || 0) || (b.dateSort || 0) - (a.dateSort || 0);
+                        case 'date_desc':
+                        default: return (b.dateSort || 0) - (a.dateSort || 0);
+                    }
+                });
+                return list;
+            }
+
+            function renderReviewsPagination(items) {
+                const root = document.getElementById('reviewsPagination');
+                if (!root) return;
+                const totalPages = Math.max(1, Math.ceil(items.length / REVIEWS_PER_PAGE));
+                if (reviewsCurrentPage > totalPages) reviewsCurrentPage = totalPages;
+                if (items.length <= REVIEWS_PER_PAGE) {
+                    root.innerHTML = '';
+                    return;
+                }
+                const buttons = [];
+                buttons.push(`<button type="button" class="page-btn ${reviewsCurrentPage === 1 ? 'disabled' : ''}" data-review-page="prev" ${reviewsCurrentPage === 1 ? 'disabled' : ''}>←</button>`);
+                for (let page = 1; page <= totalPages; page++) {
+                    if (page === 1 || page === totalPages || Math.abs(page - reviewsCurrentPage) <= 1) {
+                        buttons.push(`<button type="button" class="page-btn ${page === reviewsCurrentPage ? 'active' : ''}" data-review-page="${page}">${page}</button>`);
+                    } else if (!buttons[buttons.length - 1]?.includes('…')) {
+                        buttons.push('<span class="page-btn" style="pointer-events:none; opacity:.6;">…</span>');
+                    }
+                }
+                buttons.push(`<button type="button" class="page-btn ${reviewsCurrentPage === totalPages ? 'disabled' : ''}" data-review-page="next" ${reviewsCurrentPage === totalPages ? 'disabled' : ''}>→</button>`);
+                root.innerHTML = buttons.join('');
+                root.querySelectorAll('[data-review-page]').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const target = btn.dataset.reviewPage;
+                        if (target === 'prev' && reviewsCurrentPage > 1) reviewsCurrentPage -= 1;
+                        else if (target === 'next' && reviewsCurrentPage < totalPages) reviewsCurrentPage += 1;
+                        else if (!Number.isNaN(Number(target))) reviewsCurrentPage = Number(target);
+                        renderComments();
+                    });
+                });
+            }
+
             function extractField(obj, possibleNames) {
                 if (!obj || typeof obj !== 'object') return null;
                 for (const name of possibleNames) {
@@ -989,6 +1216,7 @@
                     authorizeWithCode(code);
                 }
                 updateAuthUI();
+                renderComments();
             }
 
             async function authorizeWithCode(code) {
@@ -1015,6 +1243,7 @@
                         discordCode = null;
                         showNotif('✅ Успешный вход', `Привет, ${currentUser.username}!`);
                         updateAuthUI();
+                        fetchReviews({ silent: true });
                     } else {
                         console.warn('Не удалось найти обязательные поля в ответе:', data);
                         showNotif('❌ Ошибка', 'Некорректный ответ сервера (нет token или userId)');
@@ -1090,7 +1319,8 @@
                 if (submitBtn) {
                     if (currentUser && !isBanned(currentUser.id)) {
                         submitBtn.disabled = false;
-                        submitBtn.querySelector('i').className = 'fas fa-paper-plane';
+                        const icon = submitBtn.querySelector('i');
+                        if (icon) icon.className = 'fas fa-paper-plane';
                         authMsg.textContent = '';
                     } else if (currentUser && isBanned(currentUser.id)) {
                         submitBtn.disabled = true;
@@ -1408,72 +1638,63 @@
                 login();
             }
 
-            async function fetchReviews() {
+            async function fetchReviews(options = {}) {
+                const silent = Boolean(options.silent);
                 try {
+                    if (!silent) {
+                        setReviewStatus('Загружаю отзывы...', 'loading');
+                    }
                     let url = API.getReviews;
                     if (token) {
-                        url += `&token=${token}`;
+                        url += `&token=${encodeURIComponent(token)}`;
                     }
-                    const response = await fetch(url);
-                    if (!response.ok) throw new Error(`Ошибка загрузки отзывов: ${response.status}`);
-                    const data = await response.json();
-
-                    if (data && data.token) {
-                        token = data.token;
-                        localStorage.setItem('apgsg_token', token);
+                    const response = await fetch(url, { cache: 'no-store' });
+                    const payload = await readResponsePayload(response);
+                    if (!payload.ok) {
+                        throw new Error(`Ошибка загрузки отзывов: ${payload.status}`);
                     }
 
-                    let reviewsArray = [];
-                    if (Array.isArray(data)) {
-                        reviewsArray = data.filter(item => !item.token);
-                        const tokenObj = data.find(item => item.token);
-                        if (tokenObj && tokenObj.token) {
-                            token = tokenObj.token;
-                            localStorage.setItem('apgsg_token', token);
-                        }
-                    } else if (data && typeof data === 'object') {
-                        reviewsArray = data.reviews || data.comments || data.data || [];
+                    if (payload.data) {
+                        updateTokenIfPresent(payload.data);
                     }
 
-                    comments = reviewsArray.map((item, index) => {
-                        const id = extractField(item, ['reviewId', 'reviewID', 'id', 'commentId']) || `temp-${index}`;
-                        const userId = extractField(item, ['authorID', 'authorId', 'userId', 'userID']) || 'unknown';
-                        const userName = extractField(item, ['authorName', 'userName', 'username', 'author']) || 'Аноним';
-                        const rating = extractField(item, ['rating']) || 5;
-                        const comment = extractField(item, ['reviewText', 'comment', 'text', 'message']) || '';
-                        let date = extractField(item, ['timestamp', 'date', 'createdAt', 'time']);
-                        if (typeof date === 'number') {
-                            date = new Date(date).toLocaleString();
-                        } else if (!date) {
-                            date = new Date().toLocaleString();
-                        }
-                        const likes = extractField(item, ['likes']) || 0;
-                        const dislikes = extractField(item, ['dislikes']) || 0;
-                        const myRating = extractField(item, ['myRating']) || 'none';
+                    const reviewsArray = extractReviewsArray(payload.data || tryParseJson(payload.text));
+                    const normalized = reviewsArray
+                        .map((item, index) => normalizeReview(item, index))
+                        .filter(item => item.comment || item.userName);
 
-                        return {
-                            id,
-                            userId,
-                            userName,
-                            rating,
-                            comment,
-                            date,
-                            likes,
-                            dislikes,
-                            myRating
-                        };
-                    });
+                    const unique = [];
+                    const seen = new Set();
+                    for (const item of normalized) {
+                        const signature = `${item.id}__${item.userId}__${item.comment}`;
+                        if (seen.has(signature)) continue;
+                        seen.add(signature);
+                        unique.push(item);
+                    }
 
+                    comments = unique;
+                    reviewsLastSyncAt = new Date();
+                    updateLastSyncLabel();
                     renderComments();
                     updateAverageRating();
+                    if (!silent) {
+                        setReviewStatus(comments.length ? 'Отзывы обновлены' : 'Пока отзывов нет — можно оставить первый.', comments.length ? 'success' : '');
+                    }
+                    if (document.getElementById('adminPanel')?.classList.contains('active')) {
+                        filterComments();
+                        updateAdminStats();
+                    }
                 } catch (err) {
                     console.error('Ошибка загрузки отзывов:', err);
                     comments = [];
                     renderComments();
+                    updateAverageRating();
+                    setReviewStatus('Не удалось загрузить отзывы. Попробуй обновить блок ещё раз.', 'error');
                 }
             }
 
-            // ИСПРАВЛЕННАЯ ФУНКЦИЯ submitReview (POST с JSON)
+            // Совместимая отправка отзыва с несколькими форматами запросов
+
             async function submitReview(rating, text) {
                 if (!token) {
                     showNotif('🔒 Требуется вход', 'Войдите через Discord');
@@ -1483,68 +1704,56 @@
                     alert('Комментарий слишком длинный (макс. 1500 символов)');
                     return false;
                 }
-                return new Promise((resolve) => {
-                    // Базовый URL без параметров
-                    const url = API.sendReview; // например, "https://441940.site.bot-hosting.cloud/MARAZMUS?question=sendReview"
-                    const xhr = new XMLHttpRequest();
-                    xhr.open('POST', url, true);
-                    xhr.setRequestHeader('Content-Type', 'application/json');
 
-                    // Формируем тело запроса в JSON
-                    const payload = JSON.stringify({
-                        token: token,
-                        rating: rating,
-                        comment: text
-                    });
+                const attempts = [
+                    async () => {
+                        const response = await fetch(API.sendReview, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ token, rating, comment: text })
+                        });
+                        return readResponsePayload(response);
+                    },
+                    async () => {
+                        const body = new URLSearchParams({ token, rating: String(rating), comment: text });
+                        const response = await fetch(API.sendReview, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+                            body: body.toString()
+                        });
+                        return readResponsePayload(response);
+                    },
+                    async () => {
+                        const url = `${API.sendReview}&token=${encodeURIComponent(token)}&rating=${encodeURIComponent(rating)}&comment=${encodeURIComponent(text)}`;
+                        const response = await fetch(url, { method: 'GET' });
+                        return readResponsePayload(response);
+                    }
+                ];
 
-                    xhr.onload = function() {
-                        if (xhr.status >= 200 && xhr.status < 300) {
-                            const responseText = xhr.responseText;
-                            try {
-                                const data = JSON.parse(responseText);
-                                const newToken = extractField(data, ['token', 'accessToken', 'refreshToken']);
-                                if (newToken) {
-                                    token = newToken;
-                                    localStorage.setItem('apgsg_token', token);
-                                }
-                                // Пытаемся добавить отзыв в локальный список для мгновенного отображения
-                                try {
-                                    const newReview = data.review || data.comment || data;
-                                    if (newReview && typeof newReview === 'object' && (newReview.authorID || newReview.authorId)) {
-                                        const reviewObj = {
-                                            id: extractField(newReview, ['reviewId', 'id']) || 'temp-' + Date.now(),
-                                            userId: extractField(newReview, ['authorID', 'authorId']) || currentUser.id,
-                                            userName: extractField(newReview, ['authorName', 'userName']) || currentUser.username,
-                                            rating: extractField(newReview, ['rating']) || rating,
-                                            comment: extractField(newReview, ['reviewText', 'comment', 'text']) || text,
-                                            date: extractField(newReview, ['timestamp']) ? new Date(extractField(newReview, ['timestamp'])).toLocaleString() : new Date().toLocaleString(),
-                                            likes: 0,
-                                            dislikes: 0,
-                                            myRating: 'none'
-                                        };
-                                        comments.unshift(reviewObj);
-                                        renderComments();
-                                        updateAverageRating();
-                                    }
-                                } catch (e) {}
-                                resolve(true);
-                            } catch (e) {
-                                console.error('Ошибка парсинга ответа:', e);
-                                resolve(false);
-                            }
-                        } else {
-                            console.error('Ошибка отправки отзыва:', xhr.status, xhr.responseText);
-                            showNotif('❌ Ошибка', 'Не удалось отправить отзыв');
-                            resolve(false);
+                for (const attempt of attempts) {
+                    try {
+                        const payload = await attempt();
+                        if (!payload.ok) continue;
+
+                        const data = payload.data || tryParseJson(payload.text) || {};
+                        updateTokenIfPresent(data);
+                        const createdReviews = extractReviewsArray(data);
+                        if (createdReviews && createdReviews.length) {
+                            const first = normalizeReview(createdReviews[0], 0);
+                            comments = [first, ...comments.filter(item => item.id !== first.id)];
                         }
-                    };
-                    xhr.onerror = function() {
-                        console.error('Сетевая ошибка');
-                        showNotif('❌ Ошибка', 'Сетевая ошибка');
-                        resolve(false);
-                    };
-                    xhr.send(payload);
-                });
+                        reviewsCurrentPage = 1;
+                        await fetchReviews({ silent: true });
+                        setReviewStatus('Отзыв отправлен и синхронизирован.', 'success');
+                        return true;
+                    } catch (err) {
+                        console.warn('Попытка отправки отзыва не удалась:', err);
+                    }
+                }
+
+                showNotif('❌ Ошибка', 'Не удалось отправить отзыв');
+                setReviewStatus('Сервер не принял отзыв. Проверь вход и попробуй ещё раз.', 'error');
+                return false;
             }
 
             async function deleteMyReview(reviewId) {
@@ -1552,30 +1761,25 @@
                     showNotif('🔒 Требуется вход', 'Войдите через Discord');
                     return false;
                 }
-                try {
-                    const url = `${API.deleteReview}&token=${token}&review=${reviewId}`;
-                    const response = await fetch(url);
-                    const responseText = await response.text();
-
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}`);
-                    }
-
+                const variants = [
+                    `${API.deleteReview}&token=${encodeURIComponent(token)}&review=${encodeURIComponent(reviewId)}`,
+                    `${API.deleteReview}&token=${encodeURIComponent(token)}&reviewId=${encodeURIComponent(reviewId)}`,
+                    `${API.deleteReview}&token=${encodeURIComponent(token)}&id=${encodeURIComponent(reviewId)}`
+                ];
+                for (const url of variants) {
                     try {
-                        const data = JSON.parse(responseText);
-                        const newToken = extractField(data, ['token', 'accessToken', 'refreshToken']);
-                        if (newToken) {
-                            token = newToken;
-                            localStorage.setItem('apgsg_token', token);
-                        }
-                    } catch (e) {}
-
-                    return true;
-                } catch (err) {
-                    console.error('Ошибка удаления отзыва:', err);
-                    showNotif('❌ Ошибка', 'Не удалось удалить отзыв');
-                    return false;
+                        const response = await fetch(url, { cache: 'no-store' });
+                        const payload = await readResponsePayload(response);
+                        if (!payload.ok) continue;
+                        if (payload.data) updateTokenIfPresent(payload.data);
+                        return true;
+                    } catch (err) {
+                        console.warn('Попытка удаления не удалась:', err);
+                    }
                 }
+                console.error('Ошибка удаления отзыва: ни один вариант не сработал');
+                showNotif('❌ Ошибка', 'Не удалось удалить отзыв');
+                return false;
             }
 
             async function rateReview(reviewId, ratingValue) {
@@ -1583,36 +1787,37 @@
                     showNotif('🔒 Требуется вход', 'Войдите через Discord');
                     return false;
                 }
-                try {
-                    const url = `${API.rateReview}&token=${token}&review=${reviewId}&rating=${ratingValue}`;
-                    const response = await fetch(url);
-                    const responseText = await response.text();
+                const ratingVariants = ratingValue === 'like'
+                    ? ['like', '1', 'up']
+                    : ['dislike', '-1', 'down'];
+                const paramNames = ['review', 'reviewId', 'id'];
 
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}`);
-                    }
-
-                    try {
-                        const data = JSON.parse(responseText);
-                        const newToken = extractField(data, ['token', 'accessToken', 'refreshToken']);
-                        if (newToken) {
-                            token = newToken;
-                            localStorage.setItem('apgsg_token', token);
+                for (const paramName of paramNames) {
+                    for (const value of ratingVariants) {
+                        try {
+                            const url = `${API.rateReview}&token=${encodeURIComponent(token)}&${paramName}=${encodeURIComponent(reviewId)}&rating=${encodeURIComponent(value)}`;
+                            const response = await fetch(url, { cache: 'no-store' });
+                            const payload = await readResponsePayload(response);
+                            if (!payload.ok) continue;
+                            if (payload.data) updateTokenIfPresent(payload.data);
+                            return true;
+                        } catch (err) {
+                            console.warn('Попытка оценки не удалась:', err);
                         }
-                    } catch (e) {}
-
-                    return true;
-                } catch (err) {
-                    console.error('Ошибка оценки отзыва:', err);
-                    showNotif('❌ Ошибка', 'Не удалось оценить отзыв');
-                    return false;
+                    }
                 }
+                console.error('Ошибка оценки отзыва: ни один вариант не сработал');
+                showNotif('❌ Ошибка', 'Не удалось оценить отзыв');
+                return false;
             }
 
             function showNotif(title, text) {
                 const n = document.getElementById('notification');
-                n.querySelector('h4').textContent = title;
-                n.querySelector('p').textContent = text;
+                if (!n) return;
+                const titleEl = n.querySelector('h4');
+                const textEl = n.querySelector('p');
+                if (titleEl) titleEl.textContent = title;
+                if (textEl) textEl.textContent = text;
                 n.classList.add('active');
                 setTimeout(() => n.classList.remove('active'), 5000);
             }
@@ -1649,31 +1854,49 @@
 
             function renderComments() {
                 const list = document.getElementById('commentsList');
-                const bannedList = JSON.parse(localStorage.getItem('banned_users') || '[]');
-                const visibleComments = comments.filter(c => !bannedList.includes(c.userId));
+                if (!list) return;
+
+                const visibleComments = getFilteredAndSortedComments();
+                updateReviewsTotalLabel(visibleComments.length);
 
                 if (!visibleComments.length) {
-                    list.innerHTML = '<p class="loading">Пока нет отзывов. Будьте первым!</p>';
+                    list.innerHTML = '<div class="comments-empty">Пока нет отзывов по выбранному фильтру. Стань первым, кто напишет честное мнение.</div>';
+                    renderReviewsPagination([]);
                     return;
                 }
-                list.innerHTML = visibleComments.map(c => {
-                    const canDelete = currentUser && c.userId === currentUser.id;
+
+                const totalPages = Math.max(1, Math.ceil(visibleComments.length / REVIEWS_PER_PAGE));
+                if (reviewsCurrentPage > totalPages) reviewsCurrentPage = totalPages;
+                const start = (reviewsCurrentPage - 1) * REVIEWS_PER_PAGE;
+                const pageItems = visibleComments.slice(start, start + REVIEWS_PER_PAGE);
+
+                list.innerHTML = pageItems.map(c => {
+                    const canDelete = currentUser && (c.userId === currentUser.id || isAdmin());
                     const myRating = c.myRating || 'none';
                     return `
-                    <div class="comment-card" data-id="${c.id}" data-userid="${c.userId}">
+                    <div class="comment-card ${c.pending ? 'is-pending' : ''}" data-id="${c.id}" data-userid="${c.userId}">
                         <div class="comment-header">
-                            <span class="comment-name">${escapeHtml(c.userName)}</span>
-                            <span class="comment-date">${c.date}</span>
+                            <div>
+                                <span class="comment-name">${escapeHtml(c.userName)}</span>
+                                ${currentUser && c.userId === currentUser.id ? '<span class="comment-author-badge"><i class="fas fa-user"></i> Ваш отзыв</span>' : ''}
+                            </div>
+                            <span class="comment-date">${escapeHtml(c.date)}</span>
                         </div>
                         <div class="comment-rating">${renderStars(c.rating)}</div>
                         <div class="comment-text">${escapeHtml(c.comment)}</div>
-                        <div class="comment-actions" style="display:flex; gap:10px; margin-top:8px;">
-                            ${canDelete ? `<button class="btn-delete" onclick="deleteComment('${c.id}')">🗑️ Удалить</button>` : ''}
-                            <button class="btn-like ${myRating === 'like' ? 'active' : ''}" onclick="rateComment('${c.id}', 'like')">👍</button>
-                            <button class="btn-dislike ${myRating === 'dislike' ? 'active' : ''}" onclick="rateComment('${c.id}', 'dislike')">👎</button>
+                        <div class="comment-footer">
+                            <div class="comment-votes">
+                                ${canDelete ? `<button class="vote-btn" onclick="deleteComment('${c.id}')"><i class="fas fa-trash"></i> Удалить</button>` : ''}
+                                <button class="vote-btn ${myRating === 'like' ? 'active' : ''}" onclick="rateComment('${c.id}', 'like')">👍 Полезно</button>
+                                <span class="vote-count">${Number(c.likes || 0)}</span>
+                                <button class="vote-btn ${myRating === 'dislike' ? 'active' : ''}" onclick="rateComment('${c.id}', 'dislike')">👎</button>
+                                <span class="vote-count">${Number(c.dislikes || 0)}</span>
+                            </div>
                         </div>
                     </div>
                 `}).join('');
+
+                renderReviewsPagination(visibleComments);
             }
 
             function renderStars(rating) {
@@ -1683,12 +1906,16 @@
             }
 
             function updateAverageRating() {
-                if (!comments || comments.length === 0) {
-                    document.getElementById('averageRating').textContent = '0.0';
+                const avgEl = document.getElementById('averageRating');
+                if (!avgEl) return;
+                const bannedList = JSON.parse(localStorage.getItem('banned_users') || '[]');
+                const visibleComments = comments.filter(c => !bannedList.includes(c.userId));
+                if (!visibleComments.length) {
+                    avgEl.textContent = '0.0';
                     return;
                 }
-                const sum = comments.reduce((acc, c) => acc + c.rating, 0);
-                document.getElementById('averageRating').textContent = (sum / comments.length).toFixed(1);
+                const sum = visibleComments.reduce((acc, c) => acc + Number(c.rating || 0), 0);
+                avgEl.textContent = (sum / visibleComments.length).toFixed(1);
             }
 
             window.deleteComment = async function(commentId) {
@@ -1861,6 +2088,38 @@
                 URL.revokeObjectURL(link.href);
             }
 
+
+            function initReviewControls() {
+                document.querySelectorAll('[data-review-filter]').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        reviewFilter = btn.dataset.reviewFilter;
+                        reviewsCurrentPage = 1;
+                        document.querySelectorAll('[data-review-filter]').forEach(item => item.classList.toggle('active', item === btn));
+                        renderComments();
+                        updateAverageRating();
+                    });
+                });
+                const sortEl = document.getElementById('reviewSort');
+                if (sortEl) {
+                    sortEl.addEventListener('change', () => {
+                        reviewSort = sortEl.value;
+                        reviewsCurrentPage = 1;
+                        renderComments();
+                    });
+                }
+                const refreshBtn = document.getElementById('refreshReviewsBtn');
+                if (refreshBtn) {
+                    refreshBtn.addEventListener('click', async () => {
+                        const original = refreshBtn.innerHTML;
+                        refreshBtn.disabled = true;
+                        refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Обновление...';
+                        await fetchReviews();
+                        refreshBtn.disabled = false;
+                        refreshBtn.innerHTML = original;
+                    });
+                }
+            }
+
             function initAdminControls() {
                 document.getElementById('adminSearch')?.addEventListener('input', filterComments);
                 document.getElementById('adminRatingFilter')?.addEventListener('change', filterComments);
@@ -1904,12 +2163,21 @@
                     logout();
                     return;
                 }
+                const btn = document.getElementById('submitFeedback');
+                const original = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Отправка...';
+                setReviewStatus('Отправляю отзыв...', 'loading');
                 const success = await submitReview(rating, text);
+                btn.innerHTML = original;
+                updateAuthUI();
                 if (success) {
                     showNotif('✅ Спасибо!', 'Ваш отзыв добавлен');
                     document.getElementById('feedback-message').value = '';
                     resetStars();
-                    await fetchReviews(); // на всякий случай обновим список
+                    await fetchReviews({ silent: true });
+                } else {
+                    btn.disabled = false;
                 }
             });
 
@@ -2056,6 +2324,7 @@
                 initGameSearch();
                 initRandomTeam();
                 initRatingStars();
+                initReviewControls();
                 loadFromStorage();
                 fetchStats();
                 fetchGames();
