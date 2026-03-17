@@ -663,6 +663,429 @@
         }
         .theme-light .bg-orb { opacity:0.06; }
         .theme-light .bg-grid { opacity:0.5; }
+    
+        /* ========== APGSG V3 UPGRADE ========== */
+        .hub-grid {
+            display: grid;
+            grid-template-columns: 1.05fr 0.95fr;
+            gap: 1.5rem;
+            align-items: start;
+        }
+        .hub-stack { display: grid; gap: 1.5rem; }
+        .hub-card {
+            background: linear-gradient(180deg, rgba(20,22,30,0.98), rgba(14,16,23,0.96));
+            border: 1px solid var(--dark-border);
+            border-radius: var(--radius);
+            padding: 1.4rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+            position: relative;
+            overflow: hidden;
+        }
+        .hub-card::before {
+            content:'';
+            position:absolute;
+            inset:0 auto auto 0;
+            width:100%;
+            height:1px;
+            background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(108,92,231,0.55), rgba(0,245,212,0.35), rgba(255,255,255,0.02));
+        }
+        .hub-card h3 { margin-bottom: 0.5rem; }
+        .hub-card p { color: var(--text-secondary); }
+        .hub-profile-header {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:1rem;
+            margin-bottom: 1rem;
+        }
+        .hub-user {
+            display:flex;
+            align-items:center;
+            gap:1rem;
+        }
+        .hub-user-avatar {
+            width:64px;
+            height:64px;
+            border-radius:20px;
+            object-fit:cover;
+            border:1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.05);
+        }
+        .hub-user-name { font-size:1.1rem; font-weight:800; }
+        .hub-user-sub { color: var(--text-muted); font-size: 0.9rem; }
+        .hub-chip-row, .hub-status-row, .hub-quick-row, .smart-tags {
+            display:flex;
+            flex-wrap:wrap;
+            gap:0.65rem;
+        }
+        
+        .smart-tag {
+            border:none;
+            cursor:pointer;
+            text-decoration:none;
+        }
+        .smart-tag.active {
+            color: white;
+            border-color: rgba(108,92,231,0.42);
+            background: linear-gradient(135deg, rgba(108,92,231,0.18), rgba(0,187,249,0.12));
+        }
+        .pulse-focus {
+            animation: pulseFocus 1.2s ease;
+        }
+        @keyframes pulseFocus {
+            0% { transform: scale(1); box-shadow: 0 0 0 rgba(108,92,231,0); }
+            35% { transform: scale(1.02); box-shadow: 0 0 0 6px rgba(108,92,231,0.15); }
+            100% { transform: scale(1); box-shadow: 0 0 0 rgba(108,92,231,0); }
+        }
+
+        .hub-chip, .status-chip, .smart-tag, .tiny-chip {
+            display:inline-flex;
+            align-items:center;
+            gap:0.5rem;
+            border-radius:999px;
+            padding:0.55rem 0.9rem;
+            font-size:0.82rem;
+            border:1px solid rgba(255,255,255,0.07);
+            background: rgba(255,255,255,0.04);
+            color: var(--text-secondary);
+            font-weight:600;
+        }
+        .status-chip {
+            cursor:pointer;
+            transition: var(--transition);
+        }
+        .status-chip:hover, .status-chip.active {
+            color: white;
+            border-color: rgba(108,92,231,0.45);
+            background: linear-gradient(135deg, rgba(108,92,231,0.18), rgba(0,187,249,0.12));
+            transform: translateY(-1px);
+        }
+        .hub-stats-mini {
+            display:grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap:0.75rem;
+            margin-top: 1rem;
+        }
+        .hub-mini {
+            padding:0.9rem;
+            border-radius:14px;
+            background: rgba(255,255,255,0.03);
+            border:1px solid rgba(255,255,255,0.05);
+        }
+        .hub-mini strong {
+            display:block;
+            font-size:1.15rem;
+            color: var(--text-primary);
+        }
+        .hub-mini span {
+            color: var(--text-muted);
+            font-size:0.8rem;
+        }
+        .lfg-form {
+            display:grid;
+            gap:0.9rem;
+            margin-top:1rem;
+        }
+        .lfg-grid {
+            display:grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap:0.9rem;
+        }
+        .field {
+            display:grid;
+            gap:0.45rem;
+        }
+        .field label {
+            font-size:0.82rem;
+            color: var(--text-muted);
+            font-weight:600;
+        }
+        .field input, .field select, .field textarea {
+            width:100%;
+            padding:0.9rem 1rem;
+            border-radius:12px;
+            border:1px solid rgba(255,255,255,0.07);
+            background: rgba(255,255,255,0.04);
+            color: var(--text-primary);
+            font-family: inherit;
+            transition: var(--transition);
+        }
+        .field input:focus, .field select:focus, .field textarea:focus {
+            outline:none;
+            border-color: rgba(108,92,231,0.6);
+            box-shadow: 0 0 0 4px rgba(108,92,231,0.12);
+        }
+        .field textarea {
+            min-height: 112px;
+            resize: vertical;
+        }
+        .hub-actions {
+            display:flex;
+            flex-wrap:wrap;
+            gap:0.75rem;
+            margin-top:0.4rem;
+        }
+        .preview-box {
+            margin-top:1rem;
+            border-radius:14px;
+            border:1px solid rgba(255,255,255,0.06);
+            background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015));
+            padding:1rem;
+            white-space: pre-wrap;
+            color: var(--text-primary);
+            line-height:1.7;
+            font-size:0.95rem;
+        }
+        .hub-inline-note {
+            margin-top:0.8rem;
+            color: var(--text-muted);
+            font-size:0.82rem;
+        }
+        .draft-list {
+            display:grid;
+            gap:0.75rem;
+            margin-top:1rem;
+        }
+        .draft-card {
+            padding:0.9rem 1rem;
+            border-radius:14px;
+            background: rgba(255,255,255,0.03);
+            border:1px solid rgba(255,255,255,0.06);
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:1rem;
+        }
+        .draft-card strong { display:block; margin-bottom:0.2rem; }
+        .draft-card small { color: var(--text-muted); }
+        .draft-actions { display:flex; gap:0.5rem; }
+        .draft-actions button {
+            border:none;
+            border-radius:10px;
+            padding:0.55rem 0.8rem;
+            cursor:pointer;
+            background: rgba(255,255,255,0.06);
+            color: var(--text-primary);
+        }
+        .smart-layout {
+            display:grid;
+            grid-template-columns: 1fr 320px;
+            gap: 1.5rem;
+            align-items:start;
+        }
+        .toolbar {
+            display:flex;
+            justify-content:space-between;
+            gap:1rem;
+            flex-wrap:wrap;
+            align-items:center;
+            margin-bottom: 1.1rem;
+        }
+        .smart-panel {
+            position: sticky;
+            top: 96px;
+        }
+        .role-basket-list, .favorite-list {
+            display:grid;
+            gap:0.7rem;
+            margin-top:1rem;
+        }
+        .basket-row {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:1rem;
+            padding:0.8rem 0.95rem;
+            border-radius:12px;
+            background: rgba(255,255,255,0.03);
+            border:1px solid rgba(255,255,255,0.05);
+        }
+        .basket-row span {
+            font-weight:600;
+        }
+        .basket-row small { color: var(--text-muted); }
+        .empty-mini {
+            color: var(--text-muted);
+            font-size:0.9rem;
+            padding: 0.9rem 0;
+        }
+        .game-card.apgsg-enhanced {
+            position:relative;
+            overflow:hidden;
+        }
+        .game-card.apgsg-enhanced .game-body {
+            padding-bottom: 1rem;
+        }
+        .game-headline {
+            display:flex;
+            justify-content:space-between;
+            align-items:flex-start;
+            gap:0.75rem;
+        }
+        .game-meta-line {
+            display:flex;
+            flex-wrap:wrap;
+            gap:0.45rem;
+            margin-top:0.7rem;
+        }
+        .game-meta-chip {
+            font-size:0.72rem;
+            color: var(--text-secondary);
+            border:1px solid rgba(255,255,255,0.07);
+            border-radius:999px;
+            padding:0.34rem 0.62rem;
+            background: rgba(255,255,255,0.03);
+        }
+        .game-footline {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:0.8rem;
+            margin-top:0.85rem;
+            color: var(--text-muted);
+            font-size:0.78rem;
+        }
+        .game-actions-mini {
+            display:flex;
+            gap:0.5rem;
+            margin-top:0.9rem;
+        }
+        .ghost-btn, .quick-action-btn, .fav-toggle {
+            border:none;
+            border-radius:10px;
+            padding:0.55rem 0.75rem;
+            cursor:pointer;
+            transition: var(--transition);
+            font-family:inherit;
+            font-weight:600;
+        }
+        .ghost-btn, .fav-toggle {
+            background: rgba(255,255,255,0.05);
+            color: var(--text-primary);
+            border:1px solid rgba(255,255,255,0.06);
+        }
+        .quick-action-btn {
+            background: linear-gradient(135deg, rgba(108,92,231,0.16), rgba(0,187,249,0.14));
+            color: var(--text-primary);
+            border:1px solid rgba(108,92,231,0.22);
+            flex: 1;
+        }
+        .fav-toggle.active {
+            color:#FFD166;
+            border-color: rgba(255,209,102,0.35);
+            background: rgba(255,209,102,0.08);
+        }
+        .ghost-btn:hover, .quick-action-btn:hover, .fav-toggle:hover {
+            transform: translateY(-1px);
+        }
+        .spotlight-strip {
+            display:grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            margin-top: 1.1rem;
+        }
+        .spotlight-card {
+            border-radius: 14px;
+            padding: 0.95rem;
+            background: linear-gradient(135deg, rgba(108,92,231,0.12), rgba(255,255,255,0.03));
+            border: 1px solid rgba(108,92,231,0.16);
+        }
+        .spotlight-card strong { display:block; margin-bottom:0.3rem; }
+        .spotlight-card small { color: var(--text-muted); }
+        .dock {
+            position: fixed;
+            left: 50%;
+            bottom: 16px;
+            transform: translateX(-50%);
+            width: min(720px, calc(100% - 24px));
+            z-index: 1200;
+            border-radius: 18px;
+            background: rgba(12,14,21,0.88);
+            backdrop-filter: blur(14px);
+            border:1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 24px 50px rgba(0,0,0,0.28);
+            padding: 0.75rem;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:0.8rem;
+        }
+        .dock-left {
+            display:flex;
+            flex-wrap:wrap;
+            gap:0.55rem;
+            align-items:center;
+        }
+        .dock-btn {
+            display:inline-flex;
+            align-items:center;
+            gap:0.45rem;
+            padding:0.72rem 0.95rem;
+            border-radius:12px;
+            border:1px solid rgba(255,255,255,0.06);
+            background: rgba(255,255,255,0.04);
+            color: var(--text-primary);
+            text-decoration:none;
+            cursor:pointer;
+            font-weight:600;
+        }
+        .dock-btn.primary {
+            background: linear-gradient(135deg, var(--primary), var(--accent-blue));
+            border:none;
+        }
+        .dock-status {
+            padding:0.72rem 0.95rem;
+            border-radius:12px;
+            background: rgba(255,255,255,0.04);
+            color: var(--text-secondary);
+            font-size:0.86rem;
+            white-space:nowrap;
+        }
+        .theme-light .dock {
+            background: rgba(255,255,255,0.9);
+            border-color: rgba(17,24,39,0.08);
+        }
+        .theme-light .dock-btn, .theme-light .dock-status {
+            background: rgba(17,24,39,0.04);
+            color: #111827;
+            border-color: rgba(17,24,39,0.08);
+        }
+        .theme-light .hub-card, .theme-light .hub-mini, .theme-light .basket-row, .theme-light .draft-card, .theme-light .spotlight-card {
+            border-color: rgba(17,24,39,0.08);
+            background: rgba(255,255,255,0.88);
+            box-shadow: 0 16px 40px rgba(17,24,39,0.08);
+        }
+        .theme-light .field input, .theme-light .field select, .theme-light .field textarea {
+            background: rgba(17,24,39,0.03);
+            border-color: rgba(17,24,39,0.08);
+            color: #111827;
+        }
+        .theme-light .hub-chip, .theme-light .status-chip, .theme-light .smart-tag, .theme-light .tiny-chip, .theme-light .game-meta-chip {
+            background: rgba(17,24,39,0.03);
+            border-color: rgba(17,24,39,0.08);
+            color: #4B5563;
+        }
+        @media (max-width: 1100px) {
+            .hub-grid, .smart-layout { grid-template-columns: 1fr; }
+            .smart-panel { position: static; }
+            .hub-stats-mini { grid-template-columns: repeat(2, 1fr); }
+            .spotlight-strip { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 720px) {
+            .lfg-grid { grid-template-columns: 1fr; }
+            .hub-profile-header { flex-direction: column; align-items:flex-start; }
+            .dock {
+                width: calc(100% - 18px);
+                bottom: 8px;
+                padding: 0.6rem;
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .dock-left { width:100%; justify-content:space-between; }
+            .dock-btn { flex:1; justify-content:center; }
+            .dock-status { text-align:center; }
+        }
+
     </style>
 </head>
 <body>
@@ -757,15 +1180,185 @@
         </div>
     </section>
 
+    
+    <section id="hub" class="section section-alt">
+        <div class="container">
+            <div class="section-header fade-up">
+                <h2>Игровой <span class="text-gradient">хаб</span></h2>
+                <p>Быстрый центр для выбора ролей, статуса и готового LFG-сообщения без вырезания старых функций сайта.</p>
+                <div class="section-line"></div>
+            </div>
+            <div class="hub-grid">
+                <div class="hub-stack">
+                    <div class="hub-card fade-up">
+                        <div class="hub-profile-header">
+                            <div class="hub-user">
+                                <img class="hub-user-avatar" id="hubUserAvatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="avatar">
+                                <div>
+                                    <div class="hub-user-name" id="hubUserName">Гость APGsG</div>
+                                    <div class="hub-user-sub" id="hubUserSub">Войди через Discord, чтобы синхронизировать роли и отзывы</div>
+                                </div>
+                            </div>
+                            <div class="hub-chip" id="hubSyncState"><i class="fas fa-bolt"></i> Синхра неактивна</div>
+                        </div>
+                        <div class="hub-status-row" id="statusButtons">
+                            <button class="status-chip active" data-status="lfg"><i class="fas fa-crosshairs"></i> Ищу пати</button>
+                            <button class="status-chip" data-status="chill"><i class="fas fa-mug-hot"></i> Чилл</button>
+                            <button class="status-chip" data-status="ranked"><i class="fas fa-ranking-star"></i> Пот</button>
+                            <button class="status-chip" data-status="off"><i class="fas fa-moon"></i> Не ищу</button>
+                        </div>
+                        <div class="hub-stats-mini">
+                            <div class="hub-mini"><strong id="hubStatMembers">--</strong><span>Участников</span></div>
+                            <div class="hub-mini"><strong id="hubStatOnline">--</strong><span>Онлайн</span></div>
+                            <div class="hub-mini"><strong id="hubStatSelected">0</strong><span>Выбрано игр</span></div>
+                            <div class="hub-mini"><strong id="hubStatFavs">0</strong><span>Избранное</span></div>
+                        </div>
+                        <div class="spotlight-strip" id="spotlightStrip">
+                            <div class="spotlight-card"><strong>Быстрый старт</strong><small>Выбери роли ниже и одним кликом синхронизируй их на сервер.</small></div>
+                            <div class="spotlight-card"><strong>LFG шаблон</strong><small>Собери готовое сообщение и сразу вставь его в Discord.</small></div>
+                            <div class="spotlight-card"><strong>Твоя база</strong><small>Избранное и черновики сохраняются локально прямо в браузере.</small></div>
+                        </div>
+                    </div>
+
+                    <div class="hub-card fade-up">
+                        <div class="toolbar">
+                            <div>
+                                <h3>LFG-конструктор</h3>
+                                <p>Собирает аккуратный текст для канала поиска команды и помогает не писать всё руками.</p>
+                            </div>
+                            <div class="hub-quick-row">
+                                <button class="btn btn-secondary" id="useSelectedGamesBtn"><i class="fas fa-wand-magic-sparkles"></i> Взять выбранные игры</button>
+                                <button class="btn btn-primary" id="syncRolesFromHub"><i class="fas fa-check-double"></i> Синхронизировать роли</button>
+                            </div>
+                        </div>
+                        <div class="lfg-form">
+                            <div class="lfg-grid">
+                                <div class="field">
+                                    <label for="lfgGame">Игра</label>
+                                    <select id="lfgGame">
+                                        <option value="">Выбери игру</option>
+                                    </select>
+                                </div>
+                                <div class="field">
+                                    <label for="lfgMode">Режим</label>
+                                    <input id="lfgMode" type="text" placeholder="Например: ranked / casual / duo / 5v5">
+                                </div>
+                                <div class="field">
+                                    <label for="lfgRank">Ранг / опыт</label>
+                                    <input id="lfgRank" type="text" placeholder="Например: Gold 3 / 2k+ часов / любой">
+                                </div>
+                                <div class="field">
+                                    <label for="lfgPlatform">Платформа / регион</label>
+                                    <input id="lfgPlatform" type="text" placeholder="PC / EU / RU / Crossplay">
+                                </div>
+                            </div>
+                            <div class="field">
+                                <label for="lfgNeed">Кого ищешь</label>
+                                <input id="lfgNeed" type="text" placeholder="Например: нужен саппорт, 2 человека, адекват, с микро">
+                            </div>
+                            <div class="field">
+                                <label for="lfgNotes">Дополнительно</label>
+                                <textarea id="lfgNotes" placeholder="Коротко: прайм-тайм, микрофон, без токсичности, возраст и т.д."></textarea>
+                            </div>
+                        </div>
+                        <div class="hub-actions">
+                            <button class="btn btn-primary" id="generateLfgBtn"><i class="fas fa-bolt"></i> Собрать текст</button>
+                            <button class="btn btn-secondary" id="copyLfgBtn"><i class="fas fa-copy"></i> Скопировать</button>
+                            <button class="btn btn-secondary" id="saveDraftBtn"><i class="fas fa-floppy-disk"></i> Сохранить черновик</button>
+                            <button class="btn btn-secondary" id="clearLfgBtn"><i class="fas fa-trash"></i> Очистить</button>
+                        </div>
+                        <div class="preview-box" id="lfgPreview">Здесь появится готовый текст для поста в Discord.</div>
+                        <div class="hub-inline-note">Подходит как быстрый шаблон: собрал, скопировал, вставил в канал поиска игроков или в бота.</div>
+                    </div>
+                </div>
+
+                <div class="hub-stack">
+                    <div class="hub-card fade-up">
+                        <h3>Умные сценарии</h3>
+                        <p>Всё нужное для живого сервера без вырезания твоих старых разделов.</p>
+                        <div class="smart-tags" id="smartTags">
+                            <button class="smart-tag" data-target="#games"><i class="fas fa-gamepad"></i> Выбрать игры</button>
+                            <button class="smart-tag" data-target="#community"><i class="fas fa-users"></i> Комьюнити</button>
+                            <button class="smart-tag" data-target="#info"><i class="fas fa-star"></i> Отзывы</button>
+                            <a class="smart-tag" href="https://discord.gg/x7PH4TBJdt" target="_blank" rel="noopener"><i class="fab fa-discord"></i> Открыть Discord</a>
+                        </div>
+                        <div class="draft-list" id="draftList">
+                            <div class="empty-mini">Черновиков пока нет.</div>
+                        </div>
+                    </div>
+
+                    <div class="hub-card fade-up">
+                        <h3>Что уже можно делать</h3>
+                        <p>Это поверх старого сайта, без сноса существующих блоков.</p>
+                        <div class="role-basket-list">
+                            <div class="basket-row">
+                                <div><span>Выбор ролей</span><small>Отмечай сразу несколько игр ниже</small></div>
+                                <div class="tiny-chip">Массовая выдача</div>
+                            </div>
+                            <div class="basket-row">
+                                <div><span>Избранное</span><small>Сохраняй любимые игры и быстро возвращайся к ним</small></div>
+                                <div class="tiny-chip">Локально</div>
+                            </div>
+                            <div class="basket-row">
+                                <div><span>Статус игрока</span><small>Держи свой режим: ищу / пот / чилл</small></div>
+                                <div class="tiny-chip">Профиль</div>
+                            </div>
+                            <div class="basket-row">
+                                <div><span>LFG-черновики</span><small>Заготовки постов на потом</small></div>
+                                <div class="tiny-chip">Быстро</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
     <section id="games" class="section">
         <div class="container">
             <div class="section-header fade-up"><h2>Поддерживаемые <span class="text-gradient">игры</span></h2><p>Найди команду для своих любимых игр</p><div class="section-line"></div></div>
-            <div class="games-grid stagger" id="gamesGrid">
+            <div class="smart-layout">
+                <div>
+                    <div class="toolbar fade-up">
+                        <div class="hub-chip-row" id="gameFilterChips">
+                            <button class="smart-tag active" data-filter="all"><i class="fas fa-border-all"></i> Все</button>
+                            <button class="smart-tag" data-filter="popular"><i class="fas fa-fire"></i> Популярные</button>
+                            <button class="smart-tag" data-filter="favorites"><i class="fas fa-star"></i> Избранные</button>
+                            <button class="smart-tag" data-filter="coop"><i class="fas fa-user-group"></i> Кооп</button>
+                            <button class="smart-tag" data-filter="shooter"><i class="fas fa-crosshairs"></i> Шутеры</button>
+                            <button class="smart-tag" data-filter="selected"><i class="fas fa-check"></i> Выбранные</button>
+                        </div>
+                        <div class="hub-chip" id="gamesToolbarInfo"><i class="fas fa-layer-group"></i> Каталог APGsG</div>
+                    </div>
+                    <div class="games-grid stagger" id="gamesGrid">
                 <div class="loading">Загрузка игр...</div>
             </div>
             <div class="bulk-actions">
                 <span id="selectedCount">Выбрано: 0</span>
                 <button class="btn btn-primary" id="bulkAssignBtn" disabled><i class="fas fa-check-double"></i> Выдать выбранные роли</button>
+            </div>
+                </div>
+                <aside class="smart-panel fade-up">
+                    <div class="hub-card">
+                        <h3>Корзина ролей</h3>
+                        <p>Сюда подтягиваются все отмеченные игры. Удобно проверять перед массовой выдачей.</p>
+                        <div class="role-basket-list" id="roleBasketList">
+                            <div class="empty-mini">Пока пусто — отметь игры чекбоксами.</div>
+                        </div>
+                        <div class="hub-actions">
+                            <button class="btn btn-secondary" id="clearSelectedGamesBtn"><i class="fas fa-eraser"></i> Снять всё</button>
+                            <button class="btn btn-primary" id="basketAssignBtn"><i class="fas fa-paper-plane"></i> Выдать роли</button>
+                        </div>
+                    </div>
+                    <div class="hub-card" style="margin-top:1rem;">
+                        <h3>Избранные игры</h3>
+                        <p>Любимые карточки доступны тут, чтобы не искать их по всему каталогу.</p>
+                        <div class="favorite-list" id="favoriteGamesList">
+                            <div class="empty-mini">Пока нет избранных.</div>
+                        </div>
+                    </div>
+                </aside>
             </div>
         </div>
     </section>
@@ -856,6 +1449,17 @@
     </footer>
 
     <button class="scroll-top-btn" id="scrollTop" aria-label="Наверх"><i class="fas fa-chevron-up"></i></button>
+
+    <div class="dock" id="quickDock">
+        <div class="dock-left">
+            <a href="#games" class="dock-btn"><i class="fas fa-gamepad"></i> Игры</a>
+            <a href="#hub" class="dock-btn"><i class="fas fa-bolt"></i> Хаб</a>
+            <button class="dock-btn" id="dockSyncRoles"><i class="fas fa-check-double"></i> Синхра</button>
+            <button class="dock-btn primary" id="dockCopyLfg"><i class="fas fa-copy"></i> Копировать LFG</button>
+        </div>
+        <div class="dock-status" id="dockStatus">Статус: ищу пати</div>
+    </div>
+
 
     <div class="game-popup" id="gamePopup">
         <div class="popup-box">
@@ -2089,5 +2693,435 @@
             });
         })();
     </script>
+
+    <script>
+        (function () {
+            const ENH = {
+                favoritesKey: 'apgsg_favorites_v3',
+                draftsKey: 'apgsg_lfg_drafts_v3',
+                statusKey: 'apgsg_presence_v3'
+            };
+
+            const gameMetaMap = [
+                { match: /counter|cs2|valorant|warface|battlefield|pubg|fortnite|apex|rainbow/i, genre: 'Шутер', vibe: 'Пот', squad: '2-5', type: 'shooter' },
+                { match: /minecraft|terraria|raft|lethal|scrap|astroneer|dst|don.t starve|barotrauma|factorio|space engineers/i, genre: 'Кооп', vibe: 'Чилл', squad: '2-8', type: 'coop' },
+                { match: /gta|garry|portal|scp|team fortress|doom/i, genre: 'Фан', vibe: 'Микс', squad: '2-6', type: 'popular' }
+            ];
+
+            let currentFilter = 'all';
+
+            function q(sel, root = document) { return root.querySelector(sel); }
+            function qa(sel, root = document) { return Array.from(root.querySelectorAll(sel)); }
+            function safeParse(raw, fallback) { try { return JSON.parse(raw); } catch (e) { return fallback; } }
+            function getFavorites() { return safeParse(localStorage.getItem(ENH.favoritesKey), []); }
+            function setFavorites(list) { localStorage.setItem(ENH.favoritesKey, JSON.stringify([...new Set(list)])); }
+            function getDrafts() { return safeParse(localStorage.getItem(ENH.draftsKey), []); }
+            function setDrafts(list) { localStorage.setItem(ENH.draftsKey, JSON.stringify(list.slice(0, 8))); }
+            function getStatus() { return localStorage.getItem(ENH.statusKey) || 'lfg'; }
+            function setStatus(value) { localStorage.setItem(ENH.statusKey, value); }
+            function userData() { return safeParse(localStorage.getItem('apgsg_user') || '{}', {}); }
+            function currentCheckedIds() { return qa('#gamesGrid .game-checkbox input:checked').map(i => i.value); }
+            function gameCards() { return qa('#gamesGrid .game-card'); }
+
+            function getGameMeta(name, index) {
+                const found = gameMetaMap.find(item => item.match.test(name || ''));
+                if (found) return found;
+                return { genre: index < 6 ? 'Популярное' : 'Комьюнити', vibe: index % 2 ? 'Чилл' : 'Пот', squad: index % 3 === 0 ? '2-5' : '2-8', type: index < 6 ? 'popular' : 'all' };
+            }
+
+            function refreshHubProfile() {
+                const user = userData();
+                const avatar = q('#hubUserAvatar');
+                const name = q('#hubUserName');
+                const sub = q('#hubUserSub');
+                const sync = q('#hubSyncState');
+                const total = q('#totalMembers')?.textContent || '--';
+                const online = q('#onlineMembers')?.textContent || '--';
+                const selected = currentCheckedIds().length;
+                const favorites = getFavorites().length;
+
+                q('#hubStatMembers').textContent = total;
+                q('#hubStatOnline').textContent = online;
+                q('#hubStatSelected').textContent = selected;
+                q('#hubStatFavs').textContent = favorites;
+
+                if (user && user.id) {
+                    name.textContent = user.username || user.userName || 'Игрок APGsG';
+                    sub.textContent = `ID: ${user.id} · роли и отзывы доступны`;
+                    if (user.avatar) avatar.src = user.avatar;
+                    sync.innerHTML = '<i class="fas fa-link"></i> Discord подключён';
+                } else {
+                    name.textContent = 'Гость APGsG';
+                    sub.textContent = 'Войди через Discord, чтобы синхронизировать роли и профиль';
+                    avatar.src = 'https://cdn.discordapp.com/embed/avatars/0.png';
+                    sync.innerHTML = '<i class="fas fa-bolt"></i> Синхра неактивна';
+                }
+
+                const status = getStatus();
+                qa('#statusButtons .status-chip').forEach(btn => btn.classList.toggle('active', btn.dataset.status === status));
+                const statusLabel = ({
+                    lfg: 'ищу пати',
+                    chill: 'чилл',
+                    ranked: 'пот',
+                    off: 'не ищу'
+                })[status] || 'ищу пати';
+                q('#dockStatus').textContent = `Статус: ${statusLabel}`;
+            }
+
+            function syncGameSelect() {
+                const select = q('#lfgGame');
+                if (!select) return;
+                const cards = gameCards().map(card => ({
+                    id: card.dataset.game,
+                    name: q('h4', card)?.textContent?.trim() || ''
+                })).filter(item => item.id && item.name);
+
+                const previous = select.value;
+                select.innerHTML = '<option value="">Выбери игру</option>' + cards.map(item =>
+                    `<option value="${item.name.replace(/"/g, '&quot;')}">${item.name}</option>`).join('');
+                if ([...select.options].some(opt => opt.value === previous)) {
+                    select.value = previous;
+                }
+            }
+
+            function buildBasket() {
+                const basket = q('#roleBasketList');
+                const favoritesBox = q('#favoriteGamesList');
+                if (!basket || !favoritesBox) return;
+
+                const cards = gameCards();
+                const checked = cards.filter(card => q('.game-checkbox input', card)?.checked);
+                const favorites = getFavorites();
+
+                basket.innerHTML = checked.length ? checked.map(card => {
+                    const name = q('h4', card)?.textContent?.trim() || 'Игра';
+                    const meta = q('.game-meta-line', card)?.textContent?.trim() || 'готово к выдаче';
+                    return `<div class="basket-row"><div><span>${name}</span><small>${meta}</small></div><button class="ghost-btn" data-uncheck="${card.dataset.game}">Убрать</button></div>`;
+                }).join('') : '<div class="empty-mini">Пока пусто — отметь игры чекбоксами.</div>';
+
+                favoritesBox.innerHTML = favorites.length ? favorites.map(id => {
+                    const card = cards.find(c => c.dataset.game === id);
+                    const name = card ? (q('h4', card)?.textContent?.trim() || 'Игра') : `Роль #${id}`;
+                    return `<div class="basket-row"><div><span>${name}</span><small>быстрый доступ</small></div><button class="ghost-btn" data-open="${id}">Открыть</button></div>`;
+                }).join('') : '<div class="empty-mini">Пока нет избранных.</div>';
+
+                qa('[data-uncheck]', basket).forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const input = q(`#game-${CSS.escape(btn.dataset.uncheck)}`);
+                        if (input) {
+                            input.checked = false;
+                            input.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    });
+                });
+
+                qa('[data-open]', favoritesBox).forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const card = cards.find(c => c.dataset.game === btn.dataset.open);
+                        if (!card) return;
+                        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        card.classList.add('pulse-focus');
+                        setTimeout(() => card.classList.remove('pulse-focus'), 1500);
+                    });
+                });
+
+                refreshHubProfile();
+            }
+
+            function decorateCards() {
+                gameCards().forEach((card, index) => {
+                    if (card.dataset.enhanced === '1') return;
+                    card.dataset.enhanced = '1';
+                    card.classList.add('apgsg-enhanced');
+
+                    const title = q('h4', card);
+                    const body = q('.game-body', card);
+                    if (!title || !body) return;
+
+                    const name = title.textContent.trim();
+                    const meta = getGameMeta(name, index);
+                    card.dataset.genreType = meta.type;
+                    card.dataset.gameName = name.toLowerCase();
+
+                    const favoriteActive = getFavorites().includes(card.dataset.game);
+                    const headline = document.createElement('div');
+                    headline.className = 'game-headline';
+                    headline.innerHTML = `
+                        <div><h4>${name}</h4></div>
+                        <button class="fav-toggle ${favoriteActive ? 'active' : ''}" type="button" aria-label="Избранное"><i class="fas fa-star"></i></button>
+                    `;
+
+                    const metaLine = document.createElement('div');
+                    metaLine.className = 'game-meta-line';
+                    metaLine.innerHTML = `
+                        <span class="game-meta-chip">${meta.genre}</span>
+                        <span class="game-meta-chip">${meta.vibe}</span>
+                        <span class="game-meta-chip">${meta.squad} чел.</span>
+                    `;
+
+                    const foot = document.createElement('div');
+                    foot.className = 'game-footline';
+                    foot.innerHTML = `<span>Роль сервера</span><span>${index < 6 ? '🔥 популярно' : '🎯 активно'}</span>`;
+
+                    const actions = document.createElement('div');
+                    actions.className = 'game-actions-mini';
+                    actions.innerHTML = `
+                        <button class="quick-action-btn" type="button"><i class="fas fa-check"></i> Быстро выбрать</button>
+                        <button class="ghost-btn" type="button"><i class="fas fa-eye"></i> Детали</button>
+                    `;
+
+                    body.innerHTML = '';
+                    body.appendChild(headline);
+                    body.appendChild(metaLine);
+                    body.appendChild(foot);
+                    body.appendChild(actions);
+
+                    q('.fav-toggle', body).addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const favs = getFavorites();
+                        const idx = favs.indexOf(card.dataset.game);
+                        if (idx >= 0) favs.splice(idx, 1); else favs.unshift(card.dataset.game);
+                        setFavorites(favs);
+                        q('.fav-toggle', body).classList.toggle('active', favs.includes(card.dataset.game));
+                        buildBasket();
+                    });
+
+                    const quick = q('.quick-action-btn', body);
+                    quick.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const input = q('.game-checkbox input', card);
+                        if (!input) return;
+                        input.checked = !input.checked;
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                    });
+
+                    q('.ghost-btn', body).addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        card.click();
+                    });
+                });
+
+                syncGameSelect();
+                applyGameFilter(currentFilter);
+                buildBasket();
+            }
+
+            function applyGameFilter(filter) {
+                currentFilter = filter || 'all';
+                const qInput = (q('#gameSearch')?.value || '').trim().toLowerCase();
+                const favorites = getFavorites();
+                gameCards().forEach((card, index) => {
+                    const name = (card.dataset.gameName || '').toLowerCase();
+                    const checked = !!q('.game-checkbox input', card)?.checked;
+                    const fav = favorites.includes(card.dataset.game);
+                    const type = card.dataset.genreType || '';
+                    let visible = !qInput || name.includes(qInput);
+
+                    if (filter === 'favorites') visible = visible && fav;
+                    if (filter === 'selected') visible = visible && checked;
+                    if (filter === 'popular') visible = visible && (index < 6 || type === 'popular');
+                    if (filter === 'coop') visible = visible && type === 'coop';
+                    if (filter === 'shooter') visible = visible && type === 'shooter';
+
+                    card.style.display = visible ? '' : 'none';
+                });
+
+                qa('#gameFilterChips .smart-tag').forEach(btn => btn.classList.toggle('active', btn.dataset.filter === currentFilter));
+                const countVisible = gameCards().filter(card => card.style.display !== 'none').length;
+                q('#gamesToolbarInfo').innerHTML = `<i class="fas fa-layer-group"></i> Показано: ${countVisible}`;
+            }
+
+            function draftPayloadFromForm() {
+                return {
+                    game: q('#lfgGame')?.value || '',
+                    mode: q('#lfgMode')?.value?.trim() || 'любой',
+                    rank: q('#lfgRank')?.value?.trim() || 'любой',
+                    platform: q('#lfgPlatform')?.value?.trim() || 'PC / любой регион',
+                    need: q('#lfgNeed')?.value?.trim() || 'адекватных тиммейтов',
+                    notes: q('#lfgNotes')?.value?.trim() || '',
+                    status: getStatus()
+                };
+            }
+
+            function buildLfgText(payload = draftPayloadFromForm()) {
+                const mood = ({
+                    lfg: 'Ищу пати',
+                    chill: 'Ищу спокойную катку',
+                    ranked: 'Ищу потную игру',
+                    off: 'Пока не ищу, но открыт к предложениям'
+                })[payload.status] || 'Ищу пати';
+
+                const parts = [
+                    `🎮 ${mood}`,
+                    payload.game ? `Игра: ${payload.game}` : 'Игра: не выбрана',
+                    `Режим: ${payload.mode}`,
+                    `Ранг/опыт: ${payload.rank}`,
+                    `Платформа/регион: ${payload.platform}`,
+                    `Кого ищу: ${payload.need}`
+                ];
+                if (payload.notes) parts.push(`Дополнительно: ${payload.notes}`);
+                return parts.join('\n');
+            }
+
+            function updateLfgPreview() {
+                q('#lfgPreview').textContent = buildLfgText();
+            }
+
+            function renderDrafts() {
+                const list = q('#draftList');
+                const drafts = getDrafts();
+                if (!list) return;
+                list.innerHTML = drafts.length ? drafts.map((draft, index) => `
+                    <div class="draft-card">
+                        <div>
+                            <strong>${draft.game || 'Без игры'}</strong>
+                            <small>${draft.mode || 'любой режим'} · ${draft.rank || 'любой'} · ${new Date(draft.savedAt).toLocaleString('ru-RU')}</small>
+                        </div>
+                        <div class="draft-actions">
+                            <button type="button" data-load-draft="${index}">Открыть</button>
+                            <button type="button" data-copy-draft="${index}">Копия</button>
+                            <button type="button" data-delete-draft="${index}">Удалить</button>
+                        </div>
+                    </div>
+                `).join('') : '<div class="empty-mini">Черновиков пока нет.</div>';
+
+                qa('[data-load-draft]', list).forEach(btn => btn.addEventListener('click', () => {
+                    const draft = drafts[Number(btn.dataset.loadDraft)];
+                    if (!draft) return;
+                    q('#lfgGame').value = draft.game || '';
+                    q('#lfgMode').value = draft.mode || '';
+                    q('#lfgRank').value = draft.rank || '';
+                    q('#lfgPlatform').value = draft.platform || '';
+                    q('#lfgNeed').value = draft.need || '';
+                    q('#lfgNotes').value = draft.notes || '';
+                    if (draft.status) {
+                        setStatus(draft.status);
+                        refreshHubProfile();
+                    }
+                    updateLfgPreview();
+                }));
+                qa('[data-copy-draft]', list).forEach(btn => btn.addEventListener('click', async () => {
+                    const draft = drafts[Number(btn.dataset.copyDraft)];
+                    if (!draft) return;
+                    await navigator.clipboard.writeText(buildLfgText(draft));
+                    if (window.showNotif) showNotif('📋 Скопировано', 'Черновик LFG скопирован');
+                }));
+                qa('[data-delete-draft]', list).forEach(btn => btn.addEventListener('click', () => {
+                    const idx = Number(btn.dataset.deleteDraft);
+                    drafts.splice(idx, 1);
+                    setDrafts(drafts);
+                    renderDrafts();
+                }));
+            }
+
+            function useSelectedGamesForLfg() {
+                const firstSelected = gameCards()
+                    .filter(card => q('.game-checkbox input', card)?.checked)
+                    .map(card => q('h4', card)?.textContent?.trim())
+                    .find(Boolean);
+                if (firstSelected) {
+                    q('#lfgGame').value = firstSelected;
+                    updateLfgPreview();
+                }
+            }
+
+            function bindHubEvents() {
+                qa('#statusButtons .status-chip').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        setStatus(btn.dataset.status);
+                        refreshHubProfile();
+                        updateLfgPreview();
+                    });
+                });
+
+                qa('#gameFilterChips .smart-tag').forEach(btn => {
+                    btn.addEventListener('click', () => applyGameFilter(btn.dataset.filter));
+                });
+
+                q('#gameSearch')?.addEventListener('input', () => applyGameFilter(currentFilter));
+                q('#clearSelectedGamesBtn')?.addEventListener('click', () => {
+                    qa('#gamesGrid .game-checkbox input:checked').forEach(input => {
+                        input.checked = false;
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                    });
+                    buildBasket();
+                });
+
+                q('#basketAssignBtn')?.addEventListener('click', () => q('#bulkAssignBtn')?.click());
+                q('#syncRolesFromHub')?.addEventListener('click', () => q('#bulkAssignBtn')?.click());
+                q('#dockSyncRoles')?.addEventListener('click', () => q('#bulkAssignBtn')?.click());
+                q('#useSelectedGamesBtn')?.addEventListener('click', useSelectedGamesForLfg);
+
+                ['#lfgGame', '#lfgMode', '#lfgRank', '#lfgPlatform', '#lfgNeed', '#lfgNotes'].forEach(sel => {
+                    q(sel)?.addEventListener('input', updateLfgPreview);
+                    q(sel)?.addEventListener('change', updateLfgPreview);
+                });
+
+                q('#generateLfgBtn')?.addEventListener('click', updateLfgPreview);
+                q('#copyLfgBtn')?.addEventListener('click', async () => {
+                    const text = buildLfgText();
+                    await navigator.clipboard.writeText(text);
+                    if (window.showNotif) showNotif('📋 Готово', 'LFG-сообщение скопировано');
+                });
+                q('#dockCopyLfg')?.addEventListener('click', () => q('#copyLfgBtn')?.click());
+
+                q('#saveDraftBtn')?.addEventListener('click', () => {
+                    const drafts = getDrafts();
+                    drafts.unshift({ ...draftPayloadFromForm(), savedAt: new Date().toISOString() });
+                    setDrafts(drafts);
+                    renderDrafts();
+                    if (window.showNotif) showNotif('💾 Сохранено', 'Черновик добавлен');
+                });
+
+                q('#clearLfgBtn')?.addEventListener('click', () => {
+                    ['#lfgMode', '#lfgRank', '#lfgPlatform', '#lfgNeed', '#lfgNotes'].forEach(sel => { const el = q(sel); if (el) el.value = ''; });
+                    q('#lfgGame').value = '';
+                    updateLfgPreview();
+                });
+
+                qa('#smartTags [data-target]').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const target = q(btn.dataset.target);
+                        if (target) target.scrollIntoView({ behavior: 'smooth' });
+                    });
+                });
+            }
+
+            function observeGames() {
+                const grid = q('#gamesGrid');
+                if (!grid) return;
+                const observer = new MutationObserver(() => {
+                    decorateCards();
+                });
+                observer.observe(grid, { childList: true, subtree: true });
+                decorateCards();
+
+                grid.addEventListener('change', (e) => {
+                    if (e.target.matches('.game-checkbox input')) {
+                        setTimeout(() => {
+                            buildBasket();
+                            useSelectedGamesForLfg();
+                        }, 10);
+                    }
+                });
+            }
+
+            function initUpgrade() {
+                bindHubEvents();
+                refreshHubProfile();
+                renderDrafts();
+                updateLfgPreview();
+                observeGames();
+                setTimeout(() => {
+                    refreshHubProfile();
+                    syncGameSelect();
+                    buildBasket();
+                }, 900);
+            }
+
+            window.addEventListener('load', () => setTimeout(initUpgrade, 700));
+        })();
+    </script>
+
 </body>
 </html>
