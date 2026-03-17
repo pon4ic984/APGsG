@@ -967,7 +967,14 @@
             align-items:center;
             gap:14px;
         }
-        .profile-quick-avatar {
+
+        #profileQuickCard,
+        .games-toolbar,
+        #toggleFavoriteGameBtn,
+        .favorite-game-btn {
+            display: none !important;
+        }
+                .profile-quick-avatar {
             width:56px;
             height:56px;
             border-radius:50%;
@@ -1074,24 +1081,6 @@
                         <a href="https://discord.gg/x7PH4TBJdt" class="btn btn-glow" target="_blank"><i class="fab fa-discord"></i> Присоединиться к серверу</a>
                         <a href="#features" class="btn btn-secondary">Узнать больше <i class="fas fa-arrow-right"></i></a>
                     </div>
-                    <div class="profile-quick-card hidden" id="profileQuickCard">
-                        <div class="profile-quick-head">
-                            <img class="profile-quick-avatar" id="profileQuickAvatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Discord avatar">
-                            <div>
-                                <div class="profile-quick-title" id="profileQuickName">Гость</div>
-                                <div class="profile-quick-sub" id="profileQuickHandle">Войди через Discord, чтобы получить роли и оставить отзыв</div>
-                            </div>
-                        </div>
-                        <div class="profile-quick-grid">
-                            <div class="profile-mini-stat"><b id="profileSelectedGames">0</b><span>Выбрано игр</span></div>
-                            <div class="profile-mini-stat"><b id="profileFavoriteGames">0</b><span>Избранное</span></div>
-                            <div class="profile-mini-stat"><b id="profileReviewReady">Нет</b><span>Готовность к отзыву</span></div>
-                        </div>
-                        <div class="profile-quick-actions">
-                            <a href="#games" class="btn btn-secondary">Выбрать игры</a>
-                            <a href="#feedback-content" class="btn btn-secondary">Оставить отзыв</a>
-                        </div>
-                    </div>
                 </div>
                 <div class="fade-up" style="transition-delay:0.15s">
                     <div class="widget-card">
@@ -1130,21 +1119,6 @@
     <section id="games" class="section">
         <div class="container">
             <div class="section-header fade-up"><h2>Поддерживаемые <span class="text-gradient">игры</span></h2><p>Найди команду для своих любимых игр</p><div class="section-line"></div></div>
-            <div class="games-toolbar fade-up">
-                <div class="games-filters" id="gamesFilters">
-                    <button class="game-filter-chip active" data-filter="all">Все</button>
-                    <button class="game-filter-chip" data-filter="favorites">Избранные</button>
-                    <button class="game-filter-chip" data-filter="selected">Выбранные</button>
-                </div>
-                <div class="games-toolbar-right">
-                    <select id="gamesSort" class="games-select" aria-label="Сортировка игр">
-                        <option value="default">Сначала как в каталоге</option>
-                        <option value="az">По алфавиту</option>
-                        <option value="favorites">Сначала избранные</option>
-                    </select>
-                    <button class="toolbar-soft-btn" id="clearSelectedGames" type="button"><i class="fas fa-broom"></i> Сбросить выбор</button>
-                </div>
-            </div>
             <div class="games-grid stagger" id="gamesGrid">
                 <div class="loading">Загрузка игр...</div>
             </div>
@@ -1209,7 +1183,7 @@
                             <span class="rating-value">0/5</span>
                         </div>
                         <div class="form-group">
-                            <textarea id="feedback-message" placeholder="Ваш комментарий..." rows="3" required></textarea>
+                            <textarea id="feedback-message" placeholder="Ваш комментарий..." rows="3" maxlength="1500" required></textarea>
                         </div>
                         <div class="feedback-tools">
                             <span class="feedback-counter" id="feedbackCounter">0 / 1500</span>
@@ -1257,7 +1231,6 @@
             <p id="popupDesc">Описание</p>
             <div class="popup-actions-stack">
             <button class="btn btn-primary" id="connectToGame"><i class="fas fa-link"></i> Подключиться и получить роль</button>
-            <button class="btn btn-secondary" id="toggleFavoriteGameBtn" type="button"><i class="fas fa-star"></i> Добавить в избранное</button>
             </div>
         </div>
     </div>
@@ -1362,6 +1335,87 @@
                 return null;
             }
 
+            function findFieldDeep(payload, possibleNames, visited = new Set(), depth = 0) {
+                if (payload == null || depth > 6) return null;
+                if (typeof payload !== 'object') return null;
+                if (visited.has(payload)) return null;
+                visited.add(payload);
+
+                const direct = extractField(payload, possibleNames);
+                if (direct !== null && direct !== undefined) return direct;
+
+                if (Array.isArray(payload)) {
+                    for (const item of payload) {
+                        const found = findFieldDeep(item, possibleNames, visited, depth + 1);
+                        if (found !== null && found !== undefined) return found;
+                    }
+                    return null;
+                }
+
+                for (const value of Object.values(payload)) {
+                    if (value && typeof value === 'object') {
+                        const found = findFieldDeep(value, possibleNames, visited, depth + 1);
+                        if (found !== null && found !== undefined) return found;
+                    }
+                }
+                return null;
+            }
+
+            function looksBrokenText(value) {
+                if (typeof value !== 'string') return false;
+                const trimmed = value.trim();
+                if (!trimmed) return false;
+                if (/^[?\uFFFD\s]+$/.test(trimmed)) return true;
+                const qCount = (trimmed.match(/\?/g) || []).length;
+                return qCount >= Math.max(3, Math.floor(trimmed.length * 0.6));
+            }
+
+            function normalizeMaybeCp1251Text(value) {
+                if (typeof value !== 'string') return '';
+                return value.replace(/\u0000/g, '').trim();
+            }
+
+            function getLocalReviewCache() {
+                try {
+                    return JSON.parse(localStorage.getItem('apgsg_review_cache') || '[]');
+                } catch (e) {
+                    return [];
+                }
+            }
+
+            function saveLocalReviewCache(items) {
+                localStorage.setItem('apgsg_review_cache', JSON.stringify(items.slice(-12)));
+            }
+
+            function rememberOwnReview(text, rating) {
+                if (!currentUser || !currentUser.id) return;
+                const items = getLocalReviewCache();
+                items.push({
+                    userId: String(currentUser.id),
+                    text: String(text || ''),
+                    rating: Number(rating) || 0,
+                    ts: Date.now(),
+                    displayName: getUserPrimaryName()
+                });
+                saveLocalReviewCache(items);
+            }
+
+            function consumeOwnReviewFallback(userId, brokenText) {
+                if (!currentUser || String(userId) !== String(currentUser.id) || !looksBrokenText(brokenText)) {
+                    return brokenText;
+                }
+                const items = getLocalReviewCache().filter(item => String(item.userId) === String(userId));
+                if (!items.length) return brokenText;
+                return items[items.length - 1].text || brokenText;
+            }
+
+            function cleanupResolvedOwnReview(userId, commentText) {
+                if (!currentUser || String(userId) !== String(currentUser.id) || looksBrokenText(commentText)) return;
+                const items = getLocalReviewCache().filter(item => String(item.userId) !== String(userId));
+                saveLocalReviewCache(items);
+            }
+
+
 
             function findNestedUserObject(payload) {
                 if (!payload || typeof payload !== 'object') return null;
@@ -1371,11 +1425,17 @@
                 if (member && typeof member === 'object' && member.user && typeof member.user === 'object') {
                     return member.user;
                 }
-                const candidates = ['data', 'result', 'profile', 'discord', 'account'];
+                const candidates = ['data', 'result', 'profile', 'discord', 'account', 'payload'];
                 for (const key of candidates) {
                     const value = payload[key];
                     if (value && typeof value === 'object') {
                         const nested = findNestedUserObject(value);
+                        if (nested) return nested;
+                    }
+                }
+                if (Array.isArray(payload)) {
+                    for (const item of payload) {
+                        const nested = findNestedUserObject(item);
                         if (nested) return nested;
                     }
                 }
@@ -1405,57 +1465,24 @@
             function normalizeDiscordUser(payload) {
                 const nestedUser = findNestedUserObject(payload) || {};
                 const source = (payload && typeof payload === 'object') ? payload : {};
-                const merged = { ...nestedUser, ...source };
-
-                const id = extractField(merged, ['userID', 'userId', 'id', 'discordId', 'discord_id']);
+                const id = findFieldDeep([source, nestedUser], ['userID', 'userId', 'id', 'discordId', 'discord_id', 'userid']);
                 if (!id) return null;
 
-                const username = extractField(merged, ['username', 'userName', 'name', 'login']) || 'Пользователь';
-                const displayName = extractField(merged, ['global_name', 'globalName', 'display_name', 'displayName', 'nickname', 'nick']) || username;
-                const avatarRaw = extractField(merged, ['avatar_url', 'avatarUrl', 'avatarURL', 'avatar', 'avatar_hash', 'avatarHash']);
+                const username = findFieldDeep([source, nestedUser], ['username', 'userName', 'name', 'login']) || 'Пользователь';
+                const displayName = findFieldDeep([source, nestedUser], ['global_name', 'globalName', 'display_name', 'displayName', 'nickname', 'nick']) || username;
+                const avatarRaw = findFieldDeep([source, nestedUser], ['avatar_url', 'avatarUrl', 'avatarURL', 'avatar', 'avatar_hash', 'avatarHash']);
 
                 return {
                     id: String(id),
-                    username: String(username),
-                    displayName: String(displayName),
+                    username: String(normalizeMaybeCp1251Text(String(username))),
+                    displayName: String(normalizeMaybeCp1251Text(String(displayName))),
                     avatar: typeof avatarRaw === 'string' ? avatarRaw : '',
                     avatarUrl: buildDiscordAvatarUrl(String(id), avatarRaw)
                 };
             }
 
-            function saveCurrentUser(userData) {
-                currentUser = userData ? {
-                    id: String(userData.id),
-                    username: userData.username || 'Пользователь',
-                    displayName: userData.displayName || userData.username || 'Пользователь',
-                    avatar: userData.avatar || '',
-                    avatarUrl: userData.avatarUrl || buildDiscordAvatarUrl(String(userData.id), userData.avatar || '')
-                } : null;
-
-                if (currentUser) {
-                    localStorage.setItem('apgsg_user', JSON.stringify(currentUser));
-                } else {
-                    localStorage.removeItem('apgsg_user');
-                }
-            }
-
-            function getUserPrimaryName() {
-                if (!currentUser) return 'Гость';
-                return currentUser.displayName || currentUser.username || 'Пользователь';
-            }
-
-            function getUserHandle() {
-                if (!currentUser) return '@guest';
-                const handle = currentUser.username || currentUser.displayName || 'user';
-                return handle.startsWith('@') ? handle : `@${handle}`;
-            }
-
-            function getUserAvatarUrl() {
-                if (!currentUser || !currentUser.id) return 'https://cdn.discordapp.com/embed/avatars/0.png';
-                return currentUser.avatarUrl || buildDiscordAvatarUrl(currentUser.id, currentUser.avatar || '');
-            }
-
             function loadFavoriteGames() {
+
                 try {
                     favoriteGames = new Set(JSON.parse(localStorage.getItem('apgsg_favorite_games') || '[]').map(String));
                 } catch (e) {
@@ -1496,20 +1523,11 @@
             }
 
             function updateProfileQuickCard() {
-                const card = document.getElementById('profileQuickCard');
-                if (!card) return;
-                const hasUser = !!currentUser;
-                card.classList.toggle('hidden', !hasUser);
-                if (!hasUser) return;
-                document.getElementById('profileQuickAvatar').src = getUserAvatarUrl();
-                document.getElementById('profileQuickName').textContent = getUserPrimaryName();
-                document.getElementById('profileQuickHandle').textContent = `${getUserHandle()} • Discord авторизация активна`;
-                document.getElementById('profileSelectedGames').textContent = String(selectedGames.size);
-                document.getElementById('profileFavoriteGames').textContent = String(favoriteGames.size);
-                document.getElementById('profileReviewReady').textContent = token ? 'Да' : 'Нет';
+                return;
             }
 
             function updateFeedbackCounter() {
+
                 const input = document.getElementById('feedback-message');
                 const counter = document.getElementById('feedbackCounter');
                 if (!input || !counter) return;
@@ -1600,7 +1618,7 @@
                 if (!payload) return;
                 if (Array.isArray(payload)) {
                     for (const item of payload) {
-                        const found = extractField(item, ['token', 'accessToken', 'access_token', 'refreshToken']);
+                        const found = findFieldDeep(item, ['token', 'accessToken', 'access_token', 'refreshToken']);
                         if (typeof found === 'string') {
                             saveToken(found);
                             return;
@@ -1609,7 +1627,7 @@
                     return;
                 }
                 if (typeof payload === 'object') {
-                    const found = extractField(payload, ['token', 'accessToken', 'access_token', 'refreshToken']);
+                    const found = findFieldDeep(payload, ['token', 'accessToken', 'access_token', 'refreshToken']);
                     if (typeof found === 'string') {
                         saveToken(found);
                     }
@@ -1623,8 +1641,8 @@
                         const parsedUser = JSON.parse(savedUser);
                         saveCurrentUser({
                             id: parsedUser.id,
-                            username: parsedUser.username || parsedUser.name || 'Пользователь',
-                            displayName: parsedUser.displayName || parsedUser.global_name || parsedUser.username || parsedUser.name || 'Пользователь',
+                            username: normalizeMaybeCp1251Text(parsedUser.username || parsedUser.name || 'Пользователь'),
+                            displayName: normalizeMaybeCp1251Text(parsedUser.displayName || parsedUser.global_name || parsedUser.username || parsedUser.name || 'Пользователь'),
                             avatar: parsedUser.avatar || parsedUser.avatar_hash || parsedUser.avatarUrl || '',
                             avatarUrl: parsedUser.avatarUrl || parsedUser.avatar_url || ''
                         });
@@ -1659,7 +1677,7 @@
                     const data = await response.json();
                     console.log('Ответ authorize (сырой):', data);
 
-                    const tokenField = extractField(data, ['token', 'accessToken', 'access_token']);
+                    const tokenField = findFieldDeep(data, ['token', 'accessToken', 'access_token', 'refreshToken']);
                     const normalizedUser = normalizeDiscordUser(data);
 
                     if (tokenField && normalizedUser) {
@@ -1901,6 +1919,8 @@
                     card.className = 'game-card';
                     card.dataset.game = String(game.id);
                     card.dataset.name = String(game.name || '').toLowerCase();
+                    card.dataset.title = String(game.name || '');
+                    card.dataset.desc = String(game.description || '');
 
                     const checkbox = document.createElement('div');
                     checkbox.className = 'game-checkbox';
@@ -1919,14 +1939,8 @@
                         applyGamesView();
                     });
 
-                    const isFavorite = favoriteGames.has(String(game.id));
                     card.innerHTML = `
                         <div class="game-thumb">
-                            <div class="game-thumb-top">
-                                <button class="favorite-game-btn ${isFavorite ? 'active' : ''}" type="button" data-game-id="${game.id}" title="${isFavorite ? 'Убрать из избранного' : 'Добавить в избранное'}">
-                                    <i class="fas fa-star"></i>
-                                </button>
-                            </div>
                             <img src="${game.image}" alt="${game.name}" onerror="this.src='data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22300%22%20height%3D%22150%22%3E%3Crect%20width%3D%22300%22%20height%3D%22150%22%20fill%3D%22%23333%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2216%22%3E${game.name}%3C%2Ftext%3E%3C%2Fsvg%3E'">
                             <div class="game-thumb-overlay"></div>
                         </div>
@@ -1939,14 +1953,8 @@
                     `;
                     card.appendChild(checkbox);
 
-                    card.querySelector('.favorite-game-btn').addEventListener('click', (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        toggleFavoriteGame(game.id);
-                    });
-
                     card.addEventListener('click', (e) => {
-                        if (!e.target.closest('.game-checkbox') && !e.target.closest('.favorite-game-btn')) {
+                        if (!e.target.closest('.game-checkbox')) {
                             openGamePopup(game);
                         }
                     });
@@ -1964,34 +1972,14 @@
                 const query = (searchInput?.value || '').trim().toLowerCase();
 
                 cards.forEach(card => {
-                    const gameId = String(card.dataset.game || '');
                     const name = String(card.dataset.name || '');
-                    let visible = !query || name.includes(query);
-                    if (activeGameFilter === 'favorites') {
-                        visible = visible && favoriteGames.has(gameId);
-                    } else if (activeGameFilter === 'selected') {
-                        visible = visible && selectedGames.has(gameId);
-                    }
+                    const visible = !query || name.includes(query);
                     card.classList.toggle('hidden-by-filter', !visible);
                 });
-
-                cards.sort((a, b) => {
-                    if (activeGameSort === 'az') {
-                        return String(a.dataset.name).localeCompare(String(b.dataset.name), 'ru');
-                    }
-                    if (activeGameSort === 'favorites') {
-                        const aFav = favoriteGames.has(String(a.dataset.game));
-                        const bFav = favoriteGames.has(String(b.dataset.game));
-                        if (aFav !== bFav) return aFav ? -1 : 1;
-                        return String(a.dataset.name).localeCompare(String(b.dataset.name), 'ru');
-                    }
-                    return 0;
-                }).forEach(card => grid.appendChild(card));
-
-                updateProfileQuickCard();
             }
 
             let currentGame = null;
+
             function openGamePopup(game) {
                 if (!currentUser && !token && !discordCode) {
                     showNotif('🔒 Требуется вход', 'Сначала авторизуйтесь через Discord');
@@ -2002,7 +1990,6 @@
                 document.getElementById('popupImg').src = game.image || '';
                 document.getElementById('popupTitle').textContent = game.name;
                 document.getElementById('popupDesc').textContent = game.description;
-                updateFavoriteButtons(game.id);
                 document.getElementById('gamePopup').classList.add('active');
                 document.body.style.overflow = 'hidden';
             }
@@ -2167,24 +2154,33 @@
                     }
 
                     comments = reviewsArray.map((item, index) => {
-                        const id = extractField(item, ['reviewId', 'reviewID', 'id', 'commentId']) || `temp-${index}`;
-                        const userId = extractField(item, ['authorID', 'authorId', 'userId', 'userID']) || 'unknown';
-                        const userName = extractField(item, ['authorName', 'userName', 'username', 'author']) || 'Аноним';
-                        const rating = Number(extractField(item, ['rating'])) || 5;
-                        const comment = extractField(item, ['reviewText', 'comment', 'text', 'message']) || '';
-                        let date = extractField(item, ['timestamp', 'date', 'createdAt', 'time']);
+                        const id = findFieldDeep(item, ['reviewId', 'reviewID', 'id', 'commentId', 'commentID']) || `temp-${index}`;
+                        const userId = findFieldDeep(item, ['authorID', 'authorId', 'userId', 'userID', 'id_author']) || 'unknown';
+                        let userName = normalizeMaybeCp1251Text(findFieldDeep(item, ['authorName', 'userName', 'username', 'author', 'nick', 'nickname']) || 'Аноним');
+                        const rating = Number(findFieldDeep(item, ['rating'])) || 5;
+                        let comment = normalizeMaybeCp1251Text(findFieldDeep(item, ['reviewText', 'comment', 'text', 'message', 'review']) || '');
+                        let date = findFieldDeep(item, ['timestamp', 'date', 'createdAt', 'time']);
                         if (typeof date === 'number') {
                             date = new Date(date).toLocaleString();
                         } else if (!date) {
                             date = new Date().toLocaleString();
                         }
-                        const likes = Number(extractField(item, ['likes'])) || 0;
-                        const dislikes = Number(extractField(item, ['dislikes'])) || 0;
-                        const myRating = extractField(item, ['myRating']) || 'none';
+                        const likes = Number(findFieldDeep(item, ['likes', 'likeCount', 'upvotes'])) || 0;
+                        const dislikes = Number(findFieldDeep(item, ['dislikes', 'dislikeCount', 'downvotes'])) || 0;
+                        const rawMyRating = findFieldDeep(item, ['myRating', 'vote', 'userVote', 'my_vote']) || 'none';
+                        const myRating = rawMyRating === 1 || rawMyRating === '1' ? 'like' : rawMyRating === -1 || rawMyRating === '-1' ? 'dislike' : String(rawMyRating || 'none').toLowerCase();
+
+                        if (currentUser && String(userId) === String(currentUser.id)) {
+                            if (!userName || looksBrokenText(userName) || userName === 'Аноним') {
+                                userName = getUserPrimaryName();
+                            }
+                            comment = consumeOwnReviewFallback(userId, comment);
+                            cleanupResolvedOwnReview(userId, comment);
+                        }
 
                         return {
-                            id,
-                            userId,
+                            id: String(id),
+                            userId: String(userId),
                             userName,
                             rating,
                             comment,
@@ -2219,6 +2215,7 @@
                     alert('Комментарий слишком длинный (макс. 1500 символов)');
                     return false;
                 }
+                rememberOwnReview(cleanText, rating);
                 return new Promise((resolve) => {
                     const url = `${API.sendReview}&token=${encodeURIComponent(token)}&rating=${encodeURIComponent(String(rating))}`;
                     const xhr = new XMLHttpRequest();
@@ -2258,7 +2255,7 @@
                         showNotif('❌ Ошибка', 'Сетевая ошибка');
                         resolve(false);
                     };
-                    xhr.send(cleanText);
+                    xhr.send(new Blob([cleanText], { type: 'text/plain;charset=UTF-8' }));
                 });
             }
 
@@ -2268,7 +2265,9 @@
                     return false;
                 }
                 try {
-                    const url = `${API.deleteReview}&token=${token}&review=${reviewId}`;
+                    const safeId = encodeURIComponent(String(reviewId));
+                    const safeToken = encodeURIComponent(String(token));
+                    const url = `${API.deleteReview}&token=${safeToken}&review=${safeId}&reviewId=${safeId}&id=${safeId}`;
                     const response = await fetch(url);
                     const responseText = await response.text();
 
@@ -2308,7 +2307,10 @@
                     return false;
                 }
                 try {
-                    const url = `${API.rateReview}&token=${token}&review=${reviewId}&rating=${ratingValue}`;
+                    const safeId = encodeURIComponent(String(reviewId));
+                    const safeToken = encodeURIComponent(String(token));
+                    const safeRating = encodeURIComponent(String(ratingValue));
+                    const url = `${API.rateReview}&token=${safeToken}&review=${safeId}&reviewId=${safeId}&id=${safeId}&rating=${safeRating}&value=${safeRating}&action=${safeRating}`;
                     const response = await fetch(url);
                     const responseText = await response.text();
 
@@ -2390,20 +2392,21 @@
                     return;
                 }
                 list.innerHTML = visibleComments.map(c => {
-                    const canDelete = currentUser && c.userId === currentUser.id;
+                    const canDelete = currentUser && (c.userId === currentUser.id || isAdmin());
                     const myRating = c.myRating || 'none';
+                    const safeId = String(c.id).replace(/'/g, "\\'");
                     return `
-                    <div class="comment-card" data-id="${c.id}" data-userid="${c.userId}">
+                    <div class="comment-card" data-id="${escapeHtml(String(c.id))}" data-userid="${escapeHtml(String(c.userId))}">
                         <div class="comment-header">
                             <span class="comment-name">${escapeHtml(c.userName)}</span>
-                            <span class="comment-date">${c.date}</span>
+                            <span class="comment-date">${escapeHtml(String(c.date))}</span>
                         </div>
                         <div class="comment-rating">${renderStars(c.rating)}</div>
                         <div class="comment-text">${escapeHtml(c.comment)}</div>
                         <div class="comment-actions">
-                            ${canDelete ? `<button class="btn-delete" onclick="deleteComment('${c.id}')"><span class="btn-icon">🗑️</span><span class="btn-text">Удалить</span></button>` : ''}
-                            <button class="btn-like ${myRating === 'like' ? 'active' : ''}" onclick="rateComment('${c.id}', 'like')"><span class="btn-icon">👍</span><span class="btn-text">Лайк</span></button>
-                            <button class="btn-dislike ${myRating === 'dislike' ? 'active' : ''}" onclick="rateComment('${c.id}', 'dislike')"><span class="btn-icon">👎</span><span class="btn-text">Дизлайк</span></button>
+                            ${canDelete ? `<button class="btn-delete" type="button" onclick="deleteComment('${safeId}')"><span class="btn-icon">🗑️</span><span class="btn-text">Удалить</span></button>` : ''}
+                            <button class="btn-like ${myRating === 'like' ? 'active' : ''}" type="button" onclick="rateComment('${safeId}', 'like')"><span class="btn-icon">👍</span><span class="btn-text">Лайк</span><span class="btn-count">${c.likes}</span></button>
+                            <button class="btn-dislike ${myRating === 'dislike' ? 'active' : ''}" type="button" onclick="rateComment('${safeId}', 'dislike')"><span class="btn-icon">👎</span><span class="btn-text">Дизлайк</span><span class="btn-count">${c.dislikes}</span></button>
                         </div>
                     </div>
                 `}).join('');
@@ -2431,7 +2434,14 @@
                 }
                 const success = await deleteMyReview(commentId);
                 if (success) {
-                    showNotif('✅ Отзыв удалён', 'Ваш отзыв удалён');
+                    comments = comments.filter(item => String(item.id) !== String(commentId));
+                    renderComments();
+                    updateAverageRating();
+                    if (isAdmin()) {
+                        filterComments();
+                        updateAdminStats();
+                    }
+                    showNotif('✅ Отзыв удалён', 'Отзыв удалён');
                     await fetchReviews();
                 }
             };
@@ -2443,6 +2453,15 @@
                 }
                 const success = await rateReview(commentId, ratingValue);
                 if (success) {
+                    const item = comments.find(entry => String(entry.id) === String(commentId));
+                    if (item) {
+                        if (item.myRating === 'like') item.likes = Math.max(0, (item.likes || 0) - 1);
+                        if (item.myRating === 'dislike') item.dislikes = Math.max(0, (item.dislikes || 0) - 1);
+                        if (ratingValue === 'like') item.likes = (item.likes || 0) + 1;
+                        if (ratingValue === 'dislike') item.dislikes = (item.dislikes || 0) + 1;
+                        item.myRating = ratingValue;
+                    }
+                    renderComments();
                     showNotif('✅ Оценка сохранена', 'Спасибо за оценку');
                     await fetchReviews();
                 }
@@ -2655,18 +2674,6 @@
             }
 
             function initGameToolbar() {
-                document.querySelectorAll('.game-filter-chip').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        document.querySelectorAll('.game-filter-chip').forEach(x => x.classList.remove('active'));
-                        btn.classList.add('active');
-                        activeGameFilter = btn.dataset.filter || 'all';
-                        applyGamesView();
-                    });
-                });
-                document.getElementById('gamesSort')?.addEventListener('change', (e) => {
-                    activeGameSort = e.target.value || 'default';
-                    applyGamesView();
-                });
                 document.getElementById('clearSelectedGames')?.addEventListener('click', () => {
                     selectedGames.clear();
                     document.querySelectorAll('.game-checkbox input').forEach(input => {
@@ -2676,13 +2683,10 @@
                     applyGamesView();
                     showNotif('🧹 Выбор очищен', 'Список выбранных игр сброшен');
                 });
-                document.getElementById('toggleFavoriteGameBtn')?.addEventListener('click', () => {
-                    if (!currentGame) return;
-                    toggleFavoriteGame(currentGame.id);
-                });
             }
 
             function initReviewTools() {
+
                 const input = document.getElementById('feedback-message');
                 if (input) {
                     let saveTimer = null;
@@ -2830,6 +2834,8 @@
                 initGameSearch();
                 initRandomTeam();
                 initRatingStars();
+                initGameToolbar();
+                initReviewTools();
                 loadFromStorage();
                 fetchStats();
                 fetchGames();
