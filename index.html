@@ -963,6 +963,84 @@
                 return null;
             }
 
+            function setAuthToken(nextToken) {
+                const normalized = typeof nextToken === 'string' ? nextToken.trim() : '';
+                token = normalized || null;
+                if (token) {
+                    localStorage.setItem('apgsg_token', token);
+                } else {
+                    localStorage.removeItem('apgsg_token');
+                }
+                return token;
+            }
+
+            function hasOwnTokenField(obj) {
+                return !!obj && typeof obj === 'object' && Object.prototype.hasOwnProperty.call(obj, 'token');
+            }
+
+            function normalizeReviewsResponse(data) {
+                const result = {
+                    reviews: [],
+                    tokenSeen: false,
+                    tokenValue: null
+                };
+
+                const pushReview = (item) => {
+                    if (!item || typeof item !== 'object' || Array.isArray(item)) return;
+                    result.reviews.push(item);
+                };
+
+                const walk = (value) => {
+                    if (Array.isArray(value)) {
+                        value.forEach(walk);
+                        return;
+                    }
+
+                    if (!value || typeof value !== 'object') return;
+
+                    if (hasOwnTokenField(value)) {
+                        result.tokenSeen = true;
+                        result.tokenValue = typeof value.token === 'string' ? value.token.trim() : '';
+                        return;
+                    }
+
+                    const nestedCollections = ['reviews', 'comments', 'data', 'items', 'list'];
+                    for (const key of nestedCollections) {
+                        if (Array.isArray(value[key])) {
+                            value[key].forEach(walk);
+                            return;
+                        }
+                    }
+
+                    const looksLikeReview = (
+                        extractField(value, ['authorID', 'authorId', 'userId', 'userID']) !== null ||
+                        extractField(value, ['reviewText', 'comment', 'text', 'message']) !== null ||
+                        extractField(value, ['rating']) !== null
+                    );
+
+                    if (looksLikeReview) {
+                        pushReview(value);
+                    }
+                };
+
+                walk(data);
+                return result;
+            }
+
+            function invalidateSession(reason) {
+                const hadAuth = !!(currentUser || token || discordCode || localStorage.getItem('apgsg_user') || localStorage.getItem('apgsg_token'));
+                currentUser = null;
+                token = null;
+                discordCode = null;
+                localStorage.removeItem('apgsg_user');
+                localStorage.removeItem('apgsg_token');
+                localStorage.removeItem('discord_code');
+                updateAuthUI();
+                if (reason && hadAuth) {
+                    showNotif('🔒 Сессия истекла', reason);
+                }
+            }
+
             function loadFromStorage() {
                 const savedUser = localStorage.getItem('apgsg_user');
                 if (savedUser) {
@@ -1003,13 +1081,12 @@
                     const usernameField = extractField(data, ['username', 'userName', 'name', 'login']);
 
                     if (tokenField && userIdField) {
-                        token = tokenField;
+                        setAuthToken(tokenField);
                         currentUser = {
                             id: userIdField,
                             username: usernameField || 'Пользователь',
                             avatar: null
                         };
-                        localStorage.setItem('apgsg_token', token);
                         localStorage.setItem('apgsg_user', JSON.stringify(currentUser));
                         localStorage.removeItem('discord_code');
                         discordCode = null;
@@ -1031,13 +1108,7 @@
             }
 
             function logout() {
-                currentUser = null;
-                token = null;
-                discordCode = null;
-                localStorage.removeItem('apgsg_user');
-                localStorage.removeItem('apgsg_token');
-                localStorage.removeItem('discord_code');
-                updateAuthUI();
+                invalidateSession('');
             }
 
             function isAdmin() {
@@ -1052,7 +1123,9 @@
 
             function updateAuthUI() {
                 const authSection = document.getElementById('authSection');
-                if (currentUser) {
+                const isAuthenticated = !!(currentUser && token);
+
+                if (isAuthenticated) {
                     authSection.innerHTML = `
                         <div class="user-info" style="display:flex; align-items:center; gap:8px;">
                             <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="avatar" style="width:28px; height:28px; border-radius:50%;">
@@ -1075,8 +1148,8 @@
                 } else if (discordCode) {
                     authSection.innerHTML = `
                         <div class="user-info" style="display:flex; align-items:center; gap:8px;">
-                            <span style="color: var(--accent);">✅ Авторизовано</span>
-                            <button class="btn-logout" id="logoutBtn" style="background:rgba(255,255,255,0.1); border:1px solid var(--dark-border); color:var(--text-secondary); padding:6px 12px; border-radius:var(--radius-sm); cursor:pointer;">Выйти</button>
+                            <span style="color: var(--accent);">⏳ Завершаем вход...</span>
+                            <button class="btn-logout" id="logoutBtn" style="background:rgba(255,255,255,0.1); border:1px solid var(--dark-border); color:var(--text-secondary); padding:6px 12px; border-radius:var(--radius-sm); cursor:pointer;">Сбросить</button>
                         </div>
                     `;
                     document.getElementById('logoutBtn').addEventListener('click', logout);
@@ -1087,14 +1160,17 @@
 
                 const submitBtn = document.getElementById('submitFeedback');
                 const authMsg = document.querySelector('.auth-message');
-                if (submitBtn) {
-                    if (currentUser && !isBanned(currentUser.id)) {
+                if (submitBtn && authMsg) {
+                    if (isAuthenticated && !isBanned(currentUser.id)) {
                         submitBtn.disabled = false;
                         submitBtn.querySelector('i').className = 'fas fa-paper-plane';
                         authMsg.textContent = '';
                     } else if (currentUser && isBanned(currentUser.id)) {
                         submitBtn.disabled = true;
                         authMsg.textContent = 'Вы забанены и не можете оставлять отзывы.';
+                    } else if (currentUser && !token) {
+                        submitBtn.disabled = true;
+                        authMsg.textContent = 'Сессия истекла. Войдите через Discord заново.';
                     } else {
                         submitBtn.disabled = true;
                         authMsg.textContent = 'Войдите через Discord, чтобы оставить отзыв.';
@@ -1103,6 +1179,7 @@
             }
 
             async function fetchStats() {
+
                 try {
                     const response = await fetch(API.statistics);
                     if (!response.ok) throw new Error(`Ошибка статистики: ${response.status}`);
@@ -1306,8 +1383,7 @@
                         const data = JSON.parse(text);
                         const newToken = extractField(data, ['token', 'accessToken', 'refreshToken']);
                         if (newToken) {
-                            token = newToken;
-                            localStorage.setItem('apgsg_token', token);
+                            setAuthToken(newToken);
                         }
                     } catch (e) {}
                     return true;
@@ -1338,8 +1414,7 @@
                         const data = JSON.parse(text);
                         const newToken = extractField(data, ['token', 'accessToken', 'refreshToken']);
                         if (newToken) {
-                            token = newToken;
-                            localStorage.setItem('apgsg_token', token);
+                            setAuthToken(newToken);
                         }
                     } catch (e) {}
                     return true;
@@ -1409,37 +1484,32 @@
             }
 
             async function fetchReviews() {
+                const hadToken = !!token;
                 try {
                     let url = API.getReviews;
                     if (token) {
-                        url += `&token=${token}`;
+                        url += `&token=${encodeURIComponent(token)}`;
                     }
                     const response = await fetch(url);
                     if (!response.ok) throw new Error(`Ошибка загрузки отзывов: ${response.status}`);
                     const data = await response.json();
 
-                    if (data && data.token) {
-                        token = data.token;
-                        localStorage.setItem('apgsg_token', token);
-                    }
+                    const normalized = normalizeReviewsResponse(data);
 
-                    let reviewsArray = [];
-                    if (Array.isArray(data)) {
-                        reviewsArray = data.filter(item => !item.token);
-                        const tokenObj = data.find(item => item.token);
-                        if (tokenObj && tokenObj.token) {
-                            token = tokenObj.token;
-                            localStorage.setItem('apgsg_token', token);
+                    if (normalized.tokenSeen) {
+                        const freshToken = normalized.tokenValue || '';
+                        if (freshToken) {
+                            setAuthToken(freshToken);
+                        } else if (hadToken) {
+                            invalidateSession('Токен отзывов больше не действителен. Войдите заново.');
                         }
-                    } else if (data && typeof data === 'object') {
-                        reviewsArray = data.reviews || data.comments || data.data || [];
                     }
 
-                    comments = reviewsArray.map((item, index) => {
+                    comments = normalized.reviews.map((item, index) => {
                         const id = extractField(item, ['reviewId', 'reviewID', 'id', 'commentId']) || `temp-${index}`;
                         const userId = extractField(item, ['authorID', 'authorId', 'userId', 'userID']) || 'unknown';
                         const userName = extractField(item, ['authorName', 'userName', 'username', 'author']) || 'Аноним';
-                        const rating = extractField(item, ['rating']) || 5;
+                        const rating = Number(extractField(item, ['rating']) || 5);
                         const comment = extractField(item, ['reviewText', 'comment', 'text', 'message']) || '';
                         let date = extractField(item, ['timestamp', 'date', 'createdAt', 'time']);
                         if (typeof date === 'number') {
@@ -1447,8 +1517,8 @@
                         } else if (!date) {
                             date = new Date().toLocaleString();
                         }
-                        const likes = extractField(item, ['likes']) || 0;
-                        const dislikes = extractField(item, ['dislikes']) || 0;
+                        const likes = Number(extractField(item, ['likes']) || 0);
+                        const dislikes = Number(extractField(item, ['dislikes']) || 0);
                         const myRating = extractField(item, ['myRating']) || 'none';
 
                         return {
@@ -1473,12 +1543,14 @@
                 }
             }
 
-            // ОТПРАВКА ОТЗЫВА: token и rating в query, в body только raw text
+            // ИСПРАВЛЕННАЯ ФУНКЦИЯ submitReview (POST с text/plain)
+
             async function submitReview(rating, text) {
                 if (!token) {
                     showNotif('🔒 Требуется вход', 'Войдите через Discord');
                     return false;
                 }
+
                 const reviewText = String(text || '').trim();
                 if (!reviewText) {
                     showNotif('⚠️ Пустой отзыв', 'Введите текст отзыва');
@@ -1488,6 +1560,7 @@
                     alert('Комментарий слишком длинный (макс. 1500 символов)');
                     return false;
                 }
+
                 return new Promise((resolve) => {
                     const url = `${API.sendReview}&token=${encodeURIComponent(token)}&rating=${encodeURIComponent(String(rating))}`;
                     const xhr = new XMLHttpRequest();
@@ -1495,52 +1568,35 @@
                     xhr.setRequestHeader('Content-Type', 'text/plain;charset=UTF-8');
 
                     xhr.onload = function() {
-                        const responseText = xhr.responseText || '';
+                        const raw = xhr.responseText || '';
+                        const normalizedRaw = raw.trim();
+
                         if (xhr.status >= 200 && xhr.status < 300) {
-                            let parsed = null;
                             try {
-                                parsed = responseText ? JSON.parse(responseText) : null;
+                                const maybeJson = normalizedRaw ? JSON.parse(normalizedRaw) : null;
+                                const newToken = maybeJson ? extractField(maybeJson, ['token', 'accessToken', 'refreshToken']) : null;
+                                if (typeof newToken === 'string') {
+                                    if (newToken.trim()) {
+                                        setAuthToken(newToken);
+                                    } else {
+                                        invalidateSession('Сервер сбросил токен. Войдите через Discord ещё раз.');
+                                    }
+                                }
                             } catch (e) {}
 
-                            if (parsed) {
-                                const newToken = extractField(parsed, ['token', 'accessToken', 'refreshToken']);
-                                if (newToken) {
-                                    token = newToken;
-                                    localStorage.setItem('apgsg_token', token);
-                                }
-
-                                try {
-                                    const newReview = parsed.review || parsed.comment || parsed;
-                                    if (newReview && typeof newReview === 'object') {
-                                        const reviewObj = {
-                                            id: extractField(newReview, ['reviewId', 'id']) || 'temp-' + Date.now(),
-                                            userId: extractField(newReview, ['authorID', 'authorId']) || (currentUser && currentUser.id) || 'me',
-                                            userName: extractField(newReview, ['authorName', 'userName']) || (currentUser && currentUser.username) || 'Вы',
-                                            rating: extractField(newReview, ['rating']) || rating,
-                                            comment: extractField(newReview, ['reviewText', 'comment', 'text']) || reviewText,
-                                            date: extractField(newReview, ['timestamp']) ? new Date(extractField(newReview, ['timestamp'])).toLocaleString() : new Date().toLocaleString(),
-                                            likes: extractField(newReview, ['likes']) || 0,
-                                            dislikes: extractField(newReview, ['dislikes']) || 0,
-                                            myRating: 'none'
-                                        };
-                                        comments.unshift(reviewObj);
-                                        renderComments();
-                                        updateAverageRating();
-                                    } else {
-                                        fetchReviews();
-                                    }
-                                } catch (e) {
-                                    fetchReviews();
-                                }
-                            } else {
-                                fetchReviews();
-                            }
                             resolve(true);
-                        } else {
-                            console.error('Ошибка отправки отзыва:', xhr.status, responseText);
-                            showNotif('❌ Ошибка', responseText || 'Не удалось отправить отзыв');
-                            resolve(false);
+                            return;
                         }
+
+                        console.error('Ошибка отправки отзыва:', xhr.status, raw);
+                        if (/invalid\s*token/i.test(normalizedRaw)) {
+                            invalidateSession('Токен стал недействительным. Войдите через Discord заново.');
+                            resolve(false);
+                            return;
+                        }
+
+                        showNotif('❌ Ошибка', normalizedRaw || 'Не удалось отправить отзыв');
+                        resolve(false);
                     };
 
                     xhr.onerror = function() {
@@ -1564,6 +1620,10 @@
                     const responseText = await response.text();
 
                     if (!response.ok) {
+                        if (/invalid\s*token/i.test(responseText || '')) {
+                            invalidateSession('Токен стал недействительным. Войдите через Discord заново.');
+                            return false;
+                        }
                         throw new Error(`HTTP ${response.status}`);
                     }
 
@@ -1571,8 +1631,7 @@
                         const data = JSON.parse(responseText);
                         const newToken = extractField(data, ['token', 'accessToken', 'refreshToken']);
                         if (newToken) {
-                            token = newToken;
-                            localStorage.setItem('apgsg_token', token);
+                            setAuthToken(newToken);
                         }
                     } catch (e) {}
 
@@ -1595,6 +1654,10 @@
                     const responseText = await response.text();
 
                     if (!response.ok) {
+                        if (/invalid\s*token/i.test(responseText || '')) {
+                            invalidateSession('Токен стал недействительным. Войдите через Discord заново.');
+                            return false;
+                        }
                         throw new Error(`HTTP ${response.status}`);
                     }
 
@@ -1602,8 +1665,7 @@
                         const data = JSON.parse(responseText);
                         const newToken = extractField(data, ['token', 'accessToken', 'refreshToken']);
                         if (newToken) {
-                            token = newToken;
-                            localStorage.setItem('apgsg_token', token);
+                            setAuthToken(newToken);
                         }
                     } catch (e) {}
 
@@ -1698,7 +1760,7 @@
             }
 
             window.deleteComment = async function(commentId) {
-                if (!currentUser) {
+                if (!currentUser || !token) {
                     showNotif('🔒 Требуется вход', 'Войдите через Discord');
                     return;
                 }
@@ -1710,7 +1772,7 @@
             };
 
             window.rateComment = async function(commentId, ratingValue) {
-                if (!currentUser) {
+                if (!currentUser || !token) {
                     showNotif('🔒 Требуется вход', 'Войдите через Discord');
                     return;
                 }
@@ -1886,8 +1948,9 @@
 
             document.getElementById('submitFeedback').addEventListener('click', async function(e) {
                 e.preventDefault();
-                if (!currentUser) {
+                if (!currentUser || !token) {
                     showNotif('🔒 Требуется вход', 'Войдите через Discord');
+                    if (!token) invalidateSession('Сессия истекла. Войдите через Discord заново.');
                     login();
                     return;
                 }
