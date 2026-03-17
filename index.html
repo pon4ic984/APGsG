@@ -328,6 +328,77 @@
         .comment-rating { margin-bottom:0.5rem; color:#ffc107; }
         .stars { letter-spacing:2px; font-size:1.1rem; }
         .comment-text { color:var(--text-secondary); line-height:1.6; font-size:0.95rem; }
+        .comment-actions {
+            display:flex;
+            flex-wrap:wrap;
+            gap:0.75rem;
+            margin-top:1rem;
+        }
+        .comment-actions button {
+            appearance:none;
+            border:1px solid rgba(255,255,255,0.08);
+            background:linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+            color:var(--text-primary);
+            padding:0.72rem 1rem;
+            border-radius:999px;
+            cursor:pointer;
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            gap:0.5rem;
+            font-size:0.9rem;
+            font-weight:700;
+            letter-spacing:0.01em;
+            transition:transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, color 0.18s ease;
+            box-shadow:0 10px 28px rgba(0,0,0,0.18);
+        }
+        .comment-actions button:hover {
+            transform:translateY(-1px);
+            border-color:rgba(255,255,255,0.18);
+        }
+        .comment-actions button:active {
+            transform:translateY(0) scale(0.98);
+        }
+        .comment-actions button .btn-icon {
+            font-size:1rem;
+            line-height:1;
+        }
+        .comment-actions button .btn-text {
+            line-height:1;
+        }
+        .btn-like {
+            color:#d9fffa;
+        }
+        .btn-like:hover {
+            border-color:rgba(0,245,212,0.45);
+            box-shadow:0 12px 30px rgba(0,245,212,0.16);
+        }
+        .btn-like.active {
+            background:linear-gradient(180deg, rgba(0,245,212,0.28), rgba(0,245,212,0.12));
+            border-color:#00f5d4;
+            color:#ffffff;
+            box-shadow:0 14px 34px rgba(0,245,212,0.22);
+        }
+        .btn-dislike {
+            color:#ffe6d9;
+        }
+        .btn-dislike:hover {
+            border-color:rgba(255,145,77,0.5);
+            box-shadow:0 12px 30px rgba(255,145,77,0.16);
+        }
+        .btn-dislike.active {
+            background:linear-gradient(180deg, rgba(255,122,89,0.26), rgba(255,122,89,0.12));
+            border-color:#ff7a59;
+            color:#ffffff;
+            box-shadow:0 14px 34px rgba(255,122,89,0.22);
+        }
+        .btn-delete {
+            color:#ffd9e3;
+        }
+        .btn-delete:hover {
+            border-color:rgba(255,107,107,0.55);
+            box-shadow:0 12px 30px rgba(255,107,107,0.18);
+        }
         .admin-actions { margin-top:0.8rem; display:flex; gap:8px; }
         .admin-actions button { background:rgba(255,255,255,0.1); border:1px solid var(--dark-border); color:var(--text-secondary); padding:4px 10px; border-radius:var(--radius-sm); cursor:pointer; transition:var(--transition); font-size:0.8rem; }
         .admin-actions button:hover { border-color:var(--primary); color:var(--text-primary); }
@@ -663,6 +734,287 @@
         }
         .theme-light .bg-orb { opacity:0.06; }
         .theme-light .bg-grid { opacity:0.5; }
+    
+
+        .discord-profile-chip {
+            display:flex;
+            align-items:center;
+            gap:10px;
+            padding:8px 12px;
+            min-width:0;
+            border:1px solid var(--dark-border);
+            background: linear-gradient(135deg, rgba(88,101,242,0.18), rgba(255,255,255,0.04));
+            border-radius: 999px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+        }
+        .discord-profile-avatar {
+            width:38px;
+            height:38px;
+            border-radius:50%;
+            object-fit:cover;
+            border:2px solid rgba(255,255,255,0.12);
+            flex-shrink:0;
+            background: var(--dark-card-2);
+        }
+        .discord-profile-meta {
+            min-width:0;
+            display:flex;
+            flex-direction:column;
+            line-height:1.05;
+        }
+        .discord-profile-name {
+            font-size:0.95rem;
+            font-weight:700;
+            color:var(--text-primary);
+            white-space:nowrap;
+            overflow:hidden;
+            text-overflow:ellipsis;
+            max-width:160px;
+        }
+        .discord-profile-handle {
+            font-size:0.78rem;
+            color:var(--text-muted);
+            white-space:nowrap;
+            overflow:hidden;
+            text-overflow:ellipsis;
+            max-width:160px;
+        }
+        .btn-logout-soft {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--dark-border);
+            color: var(--text-secondary);
+            padding: 8px 12px;
+            border-radius: 999px;
+            cursor:pointer;
+            transition: all .2s ease;
+        }
+        .btn-logout-soft:hover {
+            color:var(--text-primary);
+            border-color: rgba(255,255,255,0.2);
+            transform: translateY(-1px);
+        }
+        .admin-link-chip {
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            width:34px;
+            height:34px;
+            border-radius:50%;
+            text-decoration:none;
+            color:var(--primary-light);
+            background:rgba(108,92,231,0.12);
+            border:1px solid rgba(108,92,231,0.22);
+        }
+        .admin-link-chip:hover { transform:translateY(-1px); }
+
+        .games-toolbar {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:14px;
+            flex-wrap:wrap;
+            margin: 0 0 24px;
+            padding: 16px;
+            border:1px solid var(--dark-border);
+            border-radius: var(--radius-lg);
+            background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015));
+        }
+        .games-filters {
+            display:flex;
+            align-items:center;
+            gap:10px;
+            flex-wrap:wrap;
+        }
+        .game-filter-chip {
+            border:1px solid var(--dark-border);
+            background: var(--dark-card-2);
+            color:var(--text-secondary);
+            padding:10px 14px;
+            border-radius: 999px;
+            cursor:pointer;
+            font-size:0.9rem;
+            transition: all .2s ease;
+        }
+        .game-filter-chip:hover,
+        .game-filter-chip.active {
+            color:var(--text-primary);
+            border-color: rgba(108,92,231,0.35);
+            background: rgba(108,92,231,0.14);
+            box-shadow: 0 8px 18px rgba(108,92,231,0.12);
+        }
+        .games-toolbar-right {
+            display:flex;
+            align-items:center;
+            gap:10px;
+            flex-wrap:wrap;
+        }
+        .games-select {
+            background: var(--dark-card-2);
+            color: var(--text-primary);
+            border:1px solid var(--dark-border);
+            border-radius: 12px;
+            padding: 10px 12px;
+            outline:none;
+        }
+        .toolbar-soft-btn {
+            border:1px solid var(--dark-border);
+            background: rgba(255,255,255,0.04);
+            color: var(--text-secondary);
+            border-radius: 12px;
+            padding: 10px 14px;
+            cursor:pointer;
+            transition: all .2s ease;
+        }
+        .toolbar-soft-btn:hover {
+            color: var(--text-primary);
+            transform: translateY(-1px);
+        }
+        .game-thumb-top {
+            position:absolute;
+            top:10px;
+            right:10px;
+            z-index:3;
+        }
+        .favorite-game-btn {
+            width:38px;
+            height:38px;
+            border-radius:50%;
+            border:1px solid rgba(255,255,255,0.15);
+            background: rgba(8,9,13,0.72);
+            backdrop-filter: blur(10px);
+            color:#fff;
+            cursor:pointer;
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            transition: all .2s ease;
+        }
+        .favorite-game-btn:hover,
+        .favorite-game-btn.active {
+            background: rgba(255,184,0,0.18);
+            border-color: rgba(255,184,0,0.45);
+            color:#ffd35a;
+            transform: scale(1.05);
+        }
+        .game-card.hidden-by-filter { display:none !important; }
+        .game-body-row {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:10px;
+        }
+        .game-badge-mini {
+            font-size:0.72rem;
+            padding:5px 9px;
+            border-radius:999px;
+            background: rgba(0,245,212,0.12);
+            color:#7ef7e9;
+            border:1px solid rgba(0,245,212,0.16);
+            flex-shrink:0;
+        }
+        .popup-actions-stack {
+            display:flex;
+            flex-direction:column;
+            gap:10px;
+        }
+
+        .feedback-tools {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:12px;
+            flex-wrap:wrap;
+            margin-top:10px;
+        }
+        .feedback-counter {
+            font-size:0.82rem;
+            color:var(--text-muted);
+        }
+        .feedback-counter.limit {
+            color:#ffb86c;
+        }
+        .feedback-draft-actions {
+            display:flex;
+            align-items:center;
+            gap:8px;
+            flex-wrap:wrap;
+        }
+        .draft-btn {
+            border:1px solid var(--dark-border);
+            background: rgba(255,255,255,0.04);
+            color:var(--text-secondary);
+            border-radius: 10px;
+            padding:8px 12px;
+            cursor:pointer;
+            transition: all .2s ease;
+        }
+        .draft-btn:hover {
+            color:var(--text-primary);
+            transform: translateY(-1px);
+        }
+        .profile-quick-card {
+            margin-top:14px;
+            border:1px solid var(--dark-border);
+            background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            display:grid;
+            gap:14px;
+        }
+        .profile-quick-card.hidden { display:none; }
+        .profile-quick-head {
+            display:flex;
+            align-items:center;
+            gap:14px;
+        }
+        .profile-quick-avatar {
+            width:56px;
+            height:56px;
+            border-radius:50%;
+            object-fit:cover;
+            border:2px solid rgba(255,255,255,0.14);
+            background: var(--dark-card-2);
+        }
+        .profile-quick-title {
+            font-size:1rem;
+            font-weight:800;
+            color:var(--text-primary);
+        }
+        .profile-quick-sub {
+            color:var(--text-muted);
+            font-size:0.86rem;
+            margin-top:4px;
+        }
+        .profile-quick-grid {
+            display:grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap:10px;
+        }
+        .profile-mini-stat {
+            padding:12px;
+            border-radius: 14px;
+            background: var(--dark-card-2);
+            border:1px solid var(--dark-border);
+        }
+        .profile-mini-stat b {
+            display:block;
+            font-size:1rem;
+            color:var(--text-primary);
+        }
+        .profile-mini-stat span {
+            color:var(--text-muted);
+            font-size:0.8rem;
+        }
+        .profile-quick-actions {
+            display:flex;
+            gap:10px;
+            flex-wrap:wrap;
+        }
+        @media (max-width: 900px) {
+            .profile-quick-grid { grid-template-columns:1fr; }
+            .discord-profile-name, .discord-profile-handle { max-width: 110px; }
+        }
+
     </style>
 </head>
 <body>
@@ -722,6 +1074,24 @@
                         <a href="https://discord.gg/x7PH4TBJdt" class="btn btn-glow" target="_blank"><i class="fab fa-discord"></i> Присоединиться к серверу</a>
                         <a href="#features" class="btn btn-secondary">Узнать больше <i class="fas fa-arrow-right"></i></a>
                     </div>
+                    <div class="profile-quick-card hidden" id="profileQuickCard">
+                        <div class="profile-quick-head">
+                            <img class="profile-quick-avatar" id="profileQuickAvatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Discord avatar">
+                            <div>
+                                <div class="profile-quick-title" id="profileQuickName">Гость</div>
+                                <div class="profile-quick-sub" id="profileQuickHandle">Войди через Discord, чтобы получить роли и оставить отзыв</div>
+                            </div>
+                        </div>
+                        <div class="profile-quick-grid">
+                            <div class="profile-mini-stat"><b id="profileSelectedGames">0</b><span>Выбрано игр</span></div>
+                            <div class="profile-mini-stat"><b id="profileFavoriteGames">0</b><span>Избранное</span></div>
+                            <div class="profile-mini-stat"><b id="profileReviewReady">Нет</b><span>Готовность к отзыву</span></div>
+                        </div>
+                        <div class="profile-quick-actions">
+                            <a href="#games" class="btn btn-secondary">Выбрать игры</a>
+                            <a href="#feedback-content" class="btn btn-secondary">Оставить отзыв</a>
+                        </div>
+                    </div>
                 </div>
                 <div class="fade-up" style="transition-delay:0.15s">
                     <div class="widget-card">
@@ -760,6 +1130,21 @@
     <section id="games" class="section">
         <div class="container">
             <div class="section-header fade-up"><h2>Поддерживаемые <span class="text-gradient">игры</span></h2><p>Найди команду для своих любимых игр</p><div class="section-line"></div></div>
+            <div class="games-toolbar fade-up">
+                <div class="games-filters" id="gamesFilters">
+                    <button class="game-filter-chip active" data-filter="all">Все</button>
+                    <button class="game-filter-chip" data-filter="favorites">Избранные</button>
+                    <button class="game-filter-chip" data-filter="selected">Выбранные</button>
+                </div>
+                <div class="games-toolbar-right">
+                    <select id="gamesSort" class="games-select" aria-label="Сортировка игр">
+                        <option value="default">Сначала как в каталоге</option>
+                        <option value="az">По алфавиту</option>
+                        <option value="favorites">Сначала избранные</option>
+                    </select>
+                    <button class="toolbar-soft-btn" id="clearSelectedGames" type="button"><i class="fas fa-broom"></i> Сбросить выбор</button>
+                </div>
+            </div>
             <div class="games-grid stagger" id="gamesGrid">
                 <div class="loading">Загрузка игр...</div>
             </div>
@@ -826,6 +1211,13 @@
                         <div class="form-group">
                             <textarea id="feedback-message" placeholder="Ваш комментарий..." rows="3" required></textarea>
                         </div>
+                        <div class="feedback-tools">
+                            <span class="feedback-counter" id="feedbackCounter">0 / 1500</span>
+                            <div class="feedback-draft-actions">
+                                <button class="draft-btn" id="saveDraftBtn" type="button"><i class="fas fa-floppy-disk"></i> Сохранить</button>
+                                <button class="draft-btn" id="clearDraftBtn" type="button"><i class="fas fa-eraser"></i> Очистить</button>
+                            </div>
+                        </div>
                         <button class="btn btn-primary" id="submitFeedback" disabled><i class="fas fa-paper-plane"></i> Отправить отзыв</button>
                         <p class="auth-message"></p>
                     </div>
@@ -863,7 +1255,10 @@
             <div class="popup-img"><img id="popupImg" src="" alt=""></div>
             <h3 id="popupTitle">Игра</h3>
             <p id="popupDesc">Описание</p>
+            <div class="popup-actions-stack">
             <button class="btn btn-primary" id="connectToGame"><i class="fas fa-link"></i> Подключиться и получить роль</button>
+            <button class="btn btn-secondary" id="toggleFavoriteGameBtn" type="button"><i class="fas fa-star"></i> Добавить в избранное</button>
+            </div>
         </div>
     </div>
 
@@ -948,6 +1343,10 @@
             let discordCode = null;
             let gamesList = [];
             let selectedGames = new Set();
+            let favoriteGames = new Set();
+            let activeGameFilter = 'all';
+            let activeGameSort = 'default';
+            let reviewDraftKey = 'apgsg_review_draft';
             let comments = [];
             let filteredComments = []; // для админки
 
@@ -963,6 +1362,195 @@
                 return null;
             }
 
+
+            function findNestedUserObject(payload) {
+                if (!payload || typeof payload !== 'object') return null;
+                const directUser = extractField(payload, ['user']);
+                if (directUser && typeof directUser === 'object') return directUser;
+                const member = extractField(payload, ['member']);
+                if (member && typeof member === 'object' && member.user && typeof member.user === 'object') {
+                    return member.user;
+                }
+                const candidates = ['data', 'result', 'profile', 'discord', 'account'];
+                for (const key of candidates) {
+                    const value = payload[key];
+                    if (value && typeof value === 'object') {
+                        const nested = findNestedUserObject(value);
+                        if (nested) return nested;
+                    }
+                }
+                return null;
+            }
+
+            function getDiscordDefaultAvatarUrl(userId) {
+                try {
+                    const bucket = Number((BigInt(String(userId)) >> 22n) % 6n);
+                    return `https://cdn.discordapp.com/embed/avatars/${bucket}.png`;
+                } catch (e) {
+                    return 'https://cdn.discordapp.com/embed/avatars/0.png';
+                }
+            }
+
+            function buildDiscordAvatarUrl(userId, avatarValue) {
+                if (typeof avatarValue === 'string' && /^https?:\/\//i.test(avatarValue)) {
+                    return avatarValue;
+                }
+                if (userId && typeof avatarValue === 'string' && avatarValue.trim()) {
+                    const ext = avatarValue.startsWith('a_') ? 'gif' : 'png';
+                    return `https://cdn.discordapp.com/avatars/${userId}/${avatarValue}.${ext}?size=128`;
+                }
+                return getDiscordDefaultAvatarUrl(userId);
+            }
+
+            function normalizeDiscordUser(payload) {
+                const nestedUser = findNestedUserObject(payload) || {};
+                const source = (payload && typeof payload === 'object') ? payload : {};
+                const merged = { ...nestedUser, ...source };
+
+                const id = extractField(merged, ['userID', 'userId', 'id', 'discordId', 'discord_id']);
+                if (!id) return null;
+
+                const username = extractField(merged, ['username', 'userName', 'name', 'login']) || 'Пользователь';
+                const displayName = extractField(merged, ['global_name', 'globalName', 'display_name', 'displayName', 'nickname', 'nick']) || username;
+                const avatarRaw = extractField(merged, ['avatar_url', 'avatarUrl', 'avatarURL', 'avatar', 'avatar_hash', 'avatarHash']);
+
+                return {
+                    id: String(id),
+                    username: String(username),
+                    displayName: String(displayName),
+                    avatar: typeof avatarRaw === 'string' ? avatarRaw : '',
+                    avatarUrl: buildDiscordAvatarUrl(String(id), avatarRaw)
+                };
+            }
+
+            function saveCurrentUser(userData) {
+                currentUser = userData ? {
+                    id: String(userData.id),
+                    username: userData.username || 'Пользователь',
+                    displayName: userData.displayName || userData.username || 'Пользователь',
+                    avatar: userData.avatar || '',
+                    avatarUrl: userData.avatarUrl || buildDiscordAvatarUrl(String(userData.id), userData.avatar || '')
+                } : null;
+
+                if (currentUser) {
+                    localStorage.setItem('apgsg_user', JSON.stringify(currentUser));
+                } else {
+                    localStorage.removeItem('apgsg_user');
+                }
+            }
+
+            function getUserPrimaryName() {
+                if (!currentUser) return 'Гость';
+                return currentUser.displayName || currentUser.username || 'Пользователь';
+            }
+
+            function getUserHandle() {
+                if (!currentUser) return '@guest';
+                const handle = currentUser.username || currentUser.displayName || 'user';
+                return handle.startsWith('@') ? handle : `@${handle}`;
+            }
+
+            function getUserAvatarUrl() {
+                if (!currentUser || !currentUser.id) return 'https://cdn.discordapp.com/embed/avatars/0.png';
+                return currentUser.avatarUrl || buildDiscordAvatarUrl(currentUser.id, currentUser.avatar || '');
+            }
+
+            function loadFavoriteGames() {
+                try {
+                    favoriteGames = new Set(JSON.parse(localStorage.getItem('apgsg_favorite_games') || '[]').map(String));
+                } catch (e) {
+                    favoriteGames = new Set();
+                }
+            }
+
+            function persistFavoriteGames() {
+                localStorage.setItem('apgsg_favorite_games', JSON.stringify([...favoriteGames]));
+                updateProfileQuickCard();
+            }
+
+            function updateFavoriteButtons(gameId) {
+                const active = favoriteGames.has(String(gameId));
+                document.querySelectorAll(`.favorite-game-btn[data-game-id="${String(gameId)}"]`).forEach(btn => {
+                    btn.classList.toggle('active', active);
+                    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+                    btn.title = active ? 'Убрать из избранного' : 'Добавить в избранное';
+                });
+                const popupBtn = document.getElementById('toggleFavoriteGameBtn');
+                if (popupBtn && currentGame && String(currentGame.id) === String(gameId)) {
+                    popupBtn.innerHTML = active
+                        ? '<i class="fas fa-star"></i> Убрать из избранного'
+                        : '<i class="fas fa-star"></i> Добавить в избранное';
+                }
+            }
+
+            function toggleFavoriteGame(gameId) {
+                const key = String(gameId);
+                if (favoriteGames.has(key)) {
+                    favoriteGames.delete(key);
+                } else {
+                    favoriteGames.add(key);
+                }
+                persistFavoriteGames();
+                updateFavoriteButtons(key);
+                applyGamesView();
+            }
+
+            function updateProfileQuickCard() {
+                const card = document.getElementById('profileQuickCard');
+                if (!card) return;
+                const hasUser = !!currentUser;
+                card.classList.toggle('hidden', !hasUser);
+                if (!hasUser) return;
+                document.getElementById('profileQuickAvatar').src = getUserAvatarUrl();
+                document.getElementById('profileQuickName').textContent = getUserPrimaryName();
+                document.getElementById('profileQuickHandle').textContent = `${getUserHandle()} • Discord авторизация активна`;
+                document.getElementById('profileSelectedGames').textContent = String(selectedGames.size);
+                document.getElementById('profileFavoriteGames').textContent = String(favoriteGames.size);
+                document.getElementById('profileReviewReady').textContent = token ? 'Да' : 'Нет';
+            }
+
+            function updateFeedbackCounter() {
+                const input = document.getElementById('feedback-message');
+                const counter = document.getElementById('feedbackCounter');
+                if (!input || !counter) return;
+                const len = input.value.length;
+                counter.textContent = `${len} / 1500`;
+                counter.classList.toggle('limit', len >= 1200);
+            }
+
+            function saveReviewDraft(showToast = false) {
+                const input = document.getElementById('feedback-message');
+                if (!input) return;
+                const value = input.value || '';
+                if (value.trim()) {
+                    localStorage.setItem(reviewDraftKey, value);
+                    if (showToast) showNotif('💾 Черновик сохранён', 'Текст отзыва сохранён в браузере');
+                } else {
+                    localStorage.removeItem(reviewDraftKey);
+                    if (showToast) showNotif('🧹 Черновик очищен', 'Пустой текст не сохраняется');
+                }
+                updateFeedbackCounter();
+            }
+
+            function clearReviewDraft() {
+                const input = document.getElementById('feedback-message');
+                if (!input) return;
+                input.value = '';
+                localStorage.removeItem(reviewDraftKey);
+                updateFeedbackCounter();
+                showNotif('🧼 Поле очищено', 'Черновик удалён');
+            }
+
+            function restoreReviewDraft() {
+                const input = document.getElementById('feedback-message');
+                if (!input) return;
+                const draft = localStorage.getItem(reviewDraftKey);
+                if (draft && !input.value) {
+                    input.value = draft;
+                }
+                updateFeedbackCounter();
+            }
+
             function saveToken(nextToken) {
                 token = typeof nextToken === 'string' ? nextToken.trim() : '';
                 if (token) {
@@ -976,8 +1564,7 @@
 
             function clearInvalidToken(reasonText = 'Сессия истекла, войдите снова через Discord') {
                 saveToken('');
-                currentUser = null;
-                localStorage.removeItem('apgsg_user');
+                saveCurrentUser(null);
                 updateAuthUI();
                 showNotif('🔒 Требуется новый вход', reasonText);
             }
@@ -1033,11 +1620,19 @@
                 const savedUser = localStorage.getItem('apgsg_user');
                 if (savedUser) {
                     try {
-                        currentUser = JSON.parse(savedUser);
+                        const parsedUser = JSON.parse(savedUser);
+                        saveCurrentUser({
+                            id: parsedUser.id,
+                            username: parsedUser.username || parsedUser.name || 'Пользователь',
+                            displayName: parsedUser.displayName || parsedUser.global_name || parsedUser.username || parsedUser.name || 'Пользователь',
+                            avatar: parsedUser.avatar || parsedUser.avatar_hash || parsedUser.avatarUrl || '',
+                            avatarUrl: parsedUser.avatarUrl || parsedUser.avatar_url || ''
+                        });
                     } catch (e) {
                         localStorage.removeItem('apgsg_user');
                     }
                 }
+                loadFavoriteGames();
                 const savedToken = sessionStorage.getItem('apgsg_token') || localStorage.getItem('apgsg_token');
                 if (savedToken) {
                     saveToken(savedToken);
@@ -1065,20 +1660,14 @@
                     console.log('Ответ authorize (сырой):', data);
 
                     const tokenField = extractField(data, ['token', 'accessToken', 'access_token']);
-                    const userIdField = extractField(data, ['userID', 'userId', 'id', 'discordId', 'discord_id']);
-                    const usernameField = extractField(data, ['username', 'userName', 'name', 'login']);
+                    const normalizedUser = normalizeDiscordUser(data);
 
-                    if (tokenField && userIdField) {
+                    if (tokenField && normalizedUser) {
                         saveToken(tokenField);
-                        currentUser = {
-                            id: userIdField,
-                            username: usernameField || 'Пользователь',
-                            avatar: null
-                        };
-                        localStorage.setItem('apgsg_user', JSON.stringify(currentUser));
+                        saveCurrentUser(normalizedUser);
                         localStorage.removeItem('discord_code');
                         discordCode = null;
-                        showNotif('✅ Успешный вход', `Привет, ${currentUser.username}!`);
+                        showNotif('✅ Успешный вход', `Привет, ${getUserPrimaryName()}!`);
                         updateAuthUI();
                     } else {
                         console.warn('Не удалось найти обязательные поля в ответе:', data);
@@ -1096,10 +1685,9 @@
             }
 
             function logout() {
-                currentUser = null;
+                saveCurrentUser(null);
                 saveToken('');
                 discordCode = null;
-                localStorage.removeItem('apgsg_user');
                 localStorage.removeItem('discord_code');
                 updateAuthUI();
             }
@@ -1118,29 +1706,37 @@
                 const authSection = document.getElementById('authSection');
                 if (currentUser) {
                     authSection.innerHTML = `
-                        <div class="user-info" style="display:flex; align-items:center; gap:8px;">
-                            <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="avatar" style="width:28px; height:28px; border-radius:50%;">
-                            <span>${escapeHtml(currentUser.username)}</span>
-                            <button class="btn-logout" id="logoutBtn" style="background:rgba(255,255,255,0.1); border:1px solid var(--dark-border); color:var(--text-secondary); padding:6px 12px; border-radius:var(--radius-sm); cursor:pointer;">Выйти</button>
+                        <div class="discord-profile-chip user-info">
+                            <img src="${escapeHtml(getUserAvatarUrl())}" alt="avatar" class="discord-profile-avatar">
+                            <div class="discord-profile-meta">
+                                <span class="discord-profile-name">${escapeHtml(getUserPrimaryName())}</span>
+                                <span class="discord-profile-handle">${escapeHtml(getUserHandle())}</span>
+                            </div>
+                            <button class="btn-logout-soft" id="logoutBtn" type="button">Выйти</button>
                         </div>
                     `;
                     document.getElementById('logoutBtn').addEventListener('click', logout);
                     if (isAdmin()) {
                         const adminLink = document.createElement('a');
                         adminLink.href = '#';
-                        adminLink.innerText = 'Админ';
-                        adminLink.style.marginLeft = '10px';
+                        adminLink.className = 'admin-link-chip';
+                        adminLink.title = 'Админ-панель';
+                        adminLink.innerHTML = '<i class="fas fa-shield-halved"></i>';
                         adminLink.addEventListener('click', (e) => {
                             e.preventDefault();
                             openAdminPanel();
                         });
-                        document.querySelector('.user-info').appendChild(adminLink);
+                        authSection.querySelector('.user-info').appendChild(adminLink);
                     }
                 } else if (discordCode) {
                     authSection.innerHTML = `
-                        <div class="user-info" style="display:flex; align-items:center; gap:8px;">
-                            <span style="color: var(--accent);">✅ Авторизовано</span>
-                            <button class="btn-logout" id="logoutBtn" style="background:rgba(255,255,255,0.1); border:1px solid var(--dark-border); color:var(--text-secondary); padding:6px 12px; border-radius:var(--radius-sm); cursor:pointer;">Выйти</button>
+                        <div class="discord-profile-chip user-info">
+                            <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="avatar" class="discord-profile-avatar">
+                            <div class="discord-profile-meta">
+                                <span class="discord-profile-name">Авторизация...</span>
+                                <span class="discord-profile-handle">Подтверждаем вход через Discord</span>
+                            </div>
+                            <button class="btn-logout-soft" id="logoutBtn" type="button">Сбросить</button>
                         </div>
                     `;
                     document.getElementById('logoutBtn').addEventListener('click', logout);
@@ -1167,6 +1763,8 @@
                         authMsg.textContent = 'Войдите через Discord, чтобы оставить отзыв.';
                     }
                 }
+
+                updateProfileQuickCard();
             }
 
             async function fetchStats() {
@@ -1301,7 +1899,8 @@
                 games.forEach(game => {
                     const card = document.createElement('div');
                     card.className = 'game-card';
-                    card.dataset.game = game.id;
+                    card.dataset.game = String(game.id);
+                    card.dataset.name = String(game.name || '').toLowerCase();
 
                     const checkbox = document.createElement('div');
                     checkbox.className = 'game-checkbox';
@@ -1312,30 +1911,84 @@
                     const input = checkbox.querySelector('input');
                     input.addEventListener('change', (e) => {
                         if (e.target.checked) {
-                            selectedGames.add(game.id);
+                            selectedGames.add(String(game.id));
                         } else {
-                            selectedGames.delete(game.id);
+                            selectedGames.delete(String(game.id));
                         }
                         updateSelectedCount();
+                        applyGamesView();
                     });
 
+                    const isFavorite = favoriteGames.has(String(game.id));
                     card.innerHTML = `
                         <div class="game-thumb">
+                            <div class="game-thumb-top">
+                                <button class="favorite-game-btn ${isFavorite ? 'active' : ''}" type="button" data-game-id="${game.id}" title="${isFavorite ? 'Убрать из избранного' : 'Добавить в избранное'}">
+                                    <i class="fas fa-star"></i>
+                                </button>
+                            </div>
                             <img src="${game.image}" alt="${game.name}" onerror="this.src='data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22300%22%20height%3D%22150%22%3E%3Crect%20width%3D%22300%22%20height%3D%22150%22%20fill%3D%22%23333%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2216%22%3E${game.name}%3C%2Ftext%3E%3C%2Fsvg%3E'">
                             <div class="game-thumb-overlay"></div>
                         </div>
-                        <div class="game-body"><h4>${game.name}</h4></div>
+                        <div class="game-body">
+                            <div class="game-body-row">
+                                <h4>${game.name}</h4>
+                                <span class="game-badge-mini">Роль</span>
+                            </div>
+                        </div>
                     `;
                     card.appendChild(checkbox);
 
+                    card.querySelector('.favorite-game-btn').addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleFavoriteGame(game.id);
+                    });
+
                     card.addEventListener('click', (e) => {
-                        if (!e.target.closest('.game-checkbox')) {
+                        if (!e.target.closest('.game-checkbox') && !e.target.closest('.favorite-game-btn')) {
                             openGamePopup(game);
                         }
                     });
 
                     grid.appendChild(card);
                 });
+                applyGamesView();
+            }
+
+            function applyGamesView() {
+                const grid = document.getElementById('gamesGrid');
+                if (!grid) return;
+                const cards = [...grid.querySelectorAll('.game-card')];
+                const searchInput = document.getElementById('gameSearch');
+                const query = (searchInput?.value || '').trim().toLowerCase();
+
+                cards.forEach(card => {
+                    const gameId = String(card.dataset.game || '');
+                    const name = String(card.dataset.name || '');
+                    let visible = !query || name.includes(query);
+                    if (activeGameFilter === 'favorites') {
+                        visible = visible && favoriteGames.has(gameId);
+                    } else if (activeGameFilter === 'selected') {
+                        visible = visible && selectedGames.has(gameId);
+                    }
+                    card.classList.toggle('hidden-by-filter', !visible);
+                });
+
+                cards.sort((a, b) => {
+                    if (activeGameSort === 'az') {
+                        return String(a.dataset.name).localeCompare(String(b.dataset.name), 'ru');
+                    }
+                    if (activeGameSort === 'favorites') {
+                        const aFav = favoriteGames.has(String(a.dataset.game));
+                        const bFav = favoriteGames.has(String(b.dataset.game));
+                        if (aFav !== bFav) return aFav ? -1 : 1;
+                        return String(a.dataset.name).localeCompare(String(b.dataset.name), 'ru');
+                    }
+                    return 0;
+                }).forEach(card => grid.appendChild(card));
+
+                updateProfileQuickCard();
             }
 
             let currentGame = null;
@@ -1349,6 +2002,7 @@
                 document.getElementById('popupImg').src = game.image || '';
                 document.getElementById('popupTitle').textContent = game.name;
                 document.getElementById('popupDesc').textContent = game.description;
+                updateFavoriteButtons(game.id);
                 document.getElementById('gamePopup').classList.add('active');
                 document.body.style.overflow = 'hidden';
             }
@@ -1357,6 +2011,7 @@
                 const count = selectedGames.size;
                 document.getElementById('selectedCount').textContent = `Выбрано: ${count}`;
                 document.getElementById('bulkAssignBtn').disabled = count === 0;
+                updateProfileQuickCard();
             }
 
             async function assignSingleRole(roleId) {
@@ -1745,10 +2400,10 @@
                         </div>
                         <div class="comment-rating">${renderStars(c.rating)}</div>
                         <div class="comment-text">${escapeHtml(c.comment)}</div>
-                        <div class="comment-actions" style="display:flex; gap:10px; margin-top:8px;">
-                            ${canDelete ? `<button class="btn-delete" onclick="deleteComment('${c.id}')">🗑️ Удалить</button>` : ''}
-                            <button class="btn-like ${myRating === 'like' ? 'active' : ''}" onclick="rateComment('${c.id}', 'like')">👍</button>
-                            <button class="btn-dislike ${myRating === 'dislike' ? 'active' : ''}" onclick="rateComment('${c.id}', 'dislike')">👎</button>
+                        <div class="comment-actions">
+                            ${canDelete ? `<button class="btn-delete" onclick="deleteComment('${c.id}')"><span class="btn-icon">🗑️</span><span class="btn-text">Удалить</span></button>` : ''}
+                            <button class="btn-like ${myRating === 'like' ? 'active' : ''}" onclick="rateComment('${c.id}', 'like')"><span class="btn-icon">👍</span><span class="btn-text">Лайк</span></button>
+                            <button class="btn-dislike ${myRating === 'dislike' ? 'active' : ''}" onclick="rateComment('${c.id}', 'dislike')"><span class="btn-icon">👎</span><span class="btn-text">Дизлайк</span></button>
                         </div>
                     </div>
                 `}).join('');
@@ -1986,19 +2641,60 @@
                 if (success) {
                     showNotif('✅ Спасибо!', 'Ваш отзыв добавлен');
                     document.getElementById('feedback-message').value = '';
+                    localStorage.removeItem(reviewDraftKey);
+                    updateFeedbackCounter();
                     resetStars();
                     await fetchReviews(); // на всякий случай обновим список
                 }
             });
 
             function initGameSearch() {
-                document.getElementById('gameSearch').addEventListener('input', function(e) {
-                    const q = e.target.value.toLowerCase();
-                    document.querySelectorAll('.game-card').forEach(card => {
-                        const name = card.querySelector('h4').textContent.toLowerCase();
-                        card.style.display = name.includes(q) ? '' : 'none';
+                document.getElementById('gameSearch').addEventListener('input', function() {
+                    applyGamesView();
+                });
+            }
+
+            function initGameToolbar() {
+                document.querySelectorAll('.game-filter-chip').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        document.querySelectorAll('.game-filter-chip').forEach(x => x.classList.remove('active'));
+                        btn.classList.add('active');
+                        activeGameFilter = btn.dataset.filter || 'all';
+                        applyGamesView();
                     });
                 });
+                document.getElementById('gamesSort')?.addEventListener('change', (e) => {
+                    activeGameSort = e.target.value || 'default';
+                    applyGamesView();
+                });
+                document.getElementById('clearSelectedGames')?.addEventListener('click', () => {
+                    selectedGames.clear();
+                    document.querySelectorAll('.game-checkbox input').forEach(input => {
+                        input.checked = false;
+                    });
+                    updateSelectedCount();
+                    applyGamesView();
+                    showNotif('🧹 Выбор очищен', 'Список выбранных игр сброшен');
+                });
+                document.getElementById('toggleFavoriteGameBtn')?.addEventListener('click', () => {
+                    if (!currentGame) return;
+                    toggleFavoriteGame(currentGame.id);
+                });
+            }
+
+            function initReviewTools() {
+                const input = document.getElementById('feedback-message');
+                if (input) {
+                    let saveTimer = null;
+                    input.addEventListener('input', () => {
+                        updateFeedbackCounter();
+                        window.clearTimeout(saveTimer);
+                        saveTimer = window.setTimeout(() => saveReviewDraft(false), 350);
+                    });
+                }
+                document.getElementById('saveDraftBtn')?.addEventListener('click', () => saveReviewDraft(true));
+                document.getElementById('clearDraftBtn')?.addEventListener('click', clearReviewDraft);
+                restoreReviewDraft();
             }
 
             function initRandomTeam() {
