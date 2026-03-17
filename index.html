@@ -1473,7 +1473,7 @@
                 }
             }
 
-            // Функция отправки отзыва: GET с телом через XMLHttpRequest
+            // ИСПРАВЛЕННАЯ ФУНКЦИЯ submitReview (POST с JSON)
             async function submitReview(rating, text) {
                 if (!token) {
                     showNotif('🔒 Требуется вход', 'Войдите через Discord');
@@ -1484,10 +1484,19 @@
                     return false;
                 }
                 return new Promise((resolve) => {
-                    const url = `${API.sendReview}&token=${token}&rating=${rating}`;
+                    // Базовый URL без параметров
+                    const url = API.sendReview; // например, "https://441940.site.bot-hosting.cloud/MARAZMUS?question=sendReview"
                     const xhr = new XMLHttpRequest();
-                    xhr.open('GET', url, true);
-                    xhr.setRequestHeader('Content-Type', 'text/plain;charset=UTF-8');
+                    xhr.open('POST', url, true);
+                    xhr.setRequestHeader('Content-Type', 'application/json');
+
+                    // Формируем тело запроса в JSON
+                    const payload = JSON.stringify({
+                        token: token,
+                        rating: rating,
+                        comment: text
+                    });
+
                     xhr.onload = function() {
                         if (xhr.status >= 200 && xhr.status < 300) {
                             const responseText = xhr.responseText;
@@ -1498,26 +1507,31 @@
                                     token = newToken;
                                     localStorage.setItem('apgsg_token', token);
                                 }
-                                // Попытка добавить отзыв сразу
-                                const newReview = data.review || data.comment || data;
-                                if (newReview && typeof newReview === 'object' && (newReview.authorID || newReview.authorId)) {
-                                    const reviewObj = {
-                                        id: extractField(newReview, ['reviewId', 'id']) || 'temp-' + Date.now(),
-                                        userId: extractField(newReview, ['authorID', 'authorId']) || currentUser.id,
-                                        userName: extractField(newReview, ['authorName', 'userName']) || currentUser.username,
-                                        rating: extractField(newReview, ['rating']) || rating,
-                                        comment: extractField(newReview, ['reviewText', 'comment', 'text']) || text,
-                                        date: extractField(newReview, ['timestamp']) ? new Date(extractField(newReview, ['timestamp'])).toLocaleString() : new Date().toLocaleString(),
-                                        likes: 0,
-                                        dislikes: 0,
-                                        myRating: 'none'
-                                    };
-                                    comments.unshift(reviewObj);
-                                    renderComments();
-                                    updateAverageRating();
-                                }
-                            } catch (e) {}
-                            resolve(true);
+                                // Пытаемся добавить отзыв в локальный список для мгновенного отображения
+                                try {
+                                    const newReview = data.review || data.comment || data;
+                                    if (newReview && typeof newReview === 'object' && (newReview.authorID || newReview.authorId)) {
+                                        const reviewObj = {
+                                            id: extractField(newReview, ['reviewId', 'id']) || 'temp-' + Date.now(),
+                                            userId: extractField(newReview, ['authorID', 'authorId']) || currentUser.id,
+                                            userName: extractField(newReview, ['authorName', 'userName']) || currentUser.username,
+                                            rating: extractField(newReview, ['rating']) || rating,
+                                            comment: extractField(newReview, ['reviewText', 'comment', 'text']) || text,
+                                            date: extractField(newReview, ['timestamp']) ? new Date(extractField(newReview, ['timestamp'])).toLocaleString() : new Date().toLocaleString(),
+                                            likes: 0,
+                                            dislikes: 0,
+                                            myRating: 'none'
+                                        };
+                                        comments.unshift(reviewObj);
+                                        renderComments();
+                                        updateAverageRating();
+                                    }
+                                } catch (e) {}
+                                resolve(true);
+                            } catch (e) {
+                                console.error('Ошибка парсинга ответа:', e);
+                                resolve(false);
+                            }
                         } else {
                             console.error('Ошибка отправки отзыва:', xhr.status, xhr.responseText);
                             showNotif('❌ Ошибка', 'Не удалось отправить отзыв');
@@ -1529,7 +1543,7 @@
                         showNotif('❌ Ошибка', 'Сетевая ошибка');
                         resolve(false);
                     };
-                    xhr.send(text);
+                    xhr.send(payload);
                 });
             }
 
