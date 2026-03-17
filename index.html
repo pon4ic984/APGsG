@@ -963,81 +963,69 @@
                 return null;
             }
 
-            function setAuthToken(nextToken) {
-                const normalized = typeof nextToken === 'string' ? nextToken.trim() : '';
-                token = normalized || null;
+            function saveToken(nextToken) {
+                token = typeof nextToken === 'string' ? nextToken.trim() : '';
                 if (token) {
+                    sessionStorage.setItem('apgsg_token', token);
                     localStorage.setItem('apgsg_token', token);
                 } else {
+                    sessionStorage.removeItem('apgsg_token');
                     localStorage.removeItem('apgsg_token');
                 }
-                return token;
             }
 
-            function hasOwnTokenField(obj) {
-                return !!obj && typeof obj === 'object' && Object.prototype.hasOwnProperty.call(obj, 'token');
+            function clearInvalidToken(reasonText = 'Сессия истекла, войдите снова через Discord') {
+                saveToken('');
+                currentUser = null;
+                localStorage.removeItem('apgsg_user');
+                updateAuthUI();
+                showNotif('🔒 Требуется новый вход', reasonText);
             }
 
-            function normalizeReviewsResponse(data) {
-                const result = {
-                    reviews: [],
-                    tokenSeen: false,
-                    tokenValue: null
-                };
-
-                const pushReview = (item) => {
-                    if (!item || typeof item !== 'object' || Array.isArray(item)) return;
-                    result.reviews.push(item);
-                };
-
-                const walk = (value) => {
-                    if (Array.isArray(value)) {
-                        value.forEach(walk);
-                        return;
+            function responseLooksLikeInvalidToken(payload) {
+                if (payload == null) return false;
+                if (typeof payload === 'string') {
+                    return /invalid token|bad token|token invalid|неверн(?:ый|ен) токен/i.test(payload);
+                }
+                if (Array.isArray(payload)) {
+                    return payload.some(responseLooksLikeInvalidToken);
+                }
+                if (typeof payload === 'object') {
+                    const message = [
+                        payload.message,
+                        payload.error,
+                        payload.errors,
+                        payload.description,
+                        payload.status,
+                        payload.reason,
+                        payload.result,
+                        payload.response
+                    ].filter(Boolean).join(' ');
+                    if (responseLooksLikeInvalidToken(message)) return true;
+                    if (typeof payload.token === 'string' && payload.token.trim() === '' && currentUser) {
+                        return true;
                     }
+                }
+                return false;
+            }
 
-                    if (!value || typeof value !== 'object') return;
-
-                    if (hasOwnTokenField(value)) {
-                        result.tokenSeen = true;
-                        result.tokenValue = typeof value.token === 'string' ? value.token.trim() : '';
-                        return;
-                    }
-
-                    const nestedCollections = ['reviews', 'comments', 'data', 'items', 'list'];
-                    for (const key of nestedCollections) {
-                        if (Array.isArray(value[key])) {
-                            value[key].forEach(walk);
+            function updateTokenFromPayload(payload) {
+                if (!payload) return;
+                if (Array.isArray(payload)) {
+                    for (const item of payload) {
+                        const found = extractField(item, ['token', 'accessToken', 'access_token', 'refreshToken']);
+                        if (typeof found === 'string') {
+                            saveToken(found);
                             return;
                         }
                     }
-
-                    const looksLikeReview = (
-                        extractField(value, ['authorID', 'authorId', 'userId', 'userID']) !== null ||
-                        extractField(value, ['reviewText', 'comment', 'text', 'message']) !== null ||
-                        extractField(value, ['rating']) !== null
-                    );
-
-                    if (looksLikeReview) {
-                        pushReview(value);
+                    return;
+                }
+                if (typeof payload === 'object') {
+                    const found = extractField(payload, ['token', 'accessToken', 'access_token', 'refreshToken']);
+                    if (typeof found === 'string') {
+                        saveToken(found);
                     }
-                };
-
-                walk(data);
-                return result;
-            }
-
-            function invalidateSession(reason) {
-                const hadAuth = !!(currentUser || token || discordCode || localStorage.getItem('apgsg_user') || localStorage.getItem('apgsg_token'));
-                currentUser = null;
-                token = null;
-                discordCode = null;
-                localStorage.removeItem('apgsg_user');
-                localStorage.removeItem('apgsg_token');
-                localStorage.removeItem('discord_code');
-                updateAuthUI();
-                if (reason && hadAuth) {
-                    showNotif('🔒 Сессия истекла', reason);
                 }
             }
 
@@ -1050,9 +1038,9 @@
                         localStorage.removeItem('apgsg_user');
                     }
                 }
-                const savedToken = localStorage.getItem('apgsg_token');
+                const savedToken = sessionStorage.getItem('apgsg_token') || localStorage.getItem('apgsg_token');
                 if (savedToken) {
-                    token = savedToken;
+                    saveToken(savedToken);
                 }
                 const savedCode = localStorage.getItem('discord_code');
                 if (savedCode) {
@@ -1081,7 +1069,7 @@
                     const usernameField = extractField(data, ['username', 'userName', 'name', 'login']);
 
                     if (tokenField && userIdField) {
-                        setAuthToken(tokenField);
+                        saveToken(tokenField);
                         currentUser = {
                             id: userIdField,
                             username: usernameField || 'Пользователь',
@@ -1108,7 +1096,12 @@
             }
 
             function logout() {
-                invalidateSession('');
+                currentUser = null;
+                saveToken('');
+                discordCode = null;
+                localStorage.removeItem('apgsg_user');
+                localStorage.removeItem('discord_code');
+                updateAuthUI();
             }
 
             function isAdmin() {
@@ -1123,9 +1116,7 @@
 
             function updateAuthUI() {
                 const authSection = document.getElementById('authSection');
-                const isAuthenticated = !!(currentUser && token);
-
-                if (isAuthenticated) {
+                if (currentUser) {
                     authSection.innerHTML = `
                         <div class="user-info" style="display:flex; align-items:center; gap:8px;">
                             <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="avatar" style="width:28px; height:28px; border-radius:50%;">
@@ -1148,8 +1139,8 @@
                 } else if (discordCode) {
                     authSection.innerHTML = `
                         <div class="user-info" style="display:flex; align-items:center; gap:8px;">
-                            <span style="color: var(--accent);">⏳ Завершаем вход...</span>
-                            <button class="btn-logout" id="logoutBtn" style="background:rgba(255,255,255,0.1); border:1px solid var(--dark-border); color:var(--text-secondary); padding:6px 12px; border-radius:var(--radius-sm); cursor:pointer;">Сбросить</button>
+                            <span style="color: var(--accent);">✅ Авторизовано</span>
+                            <button class="btn-logout" id="logoutBtn" style="background:rgba(255,255,255,0.1); border:1px solid var(--dark-border); color:var(--text-secondary); padding:6px 12px; border-radius:var(--radius-sm); cursor:pointer;">Выйти</button>
                         </div>
                     `;
                     document.getElementById('logoutBtn').addEventListener('click', logout);
@@ -1160,17 +1151,17 @@
 
                 const submitBtn = document.getElementById('submitFeedback');
                 const authMsg = document.querySelector('.auth-message');
-                if (submitBtn && authMsg) {
-                    if (isAuthenticated && !isBanned(currentUser.id)) {
+                if (submitBtn) {
+                    if (currentUser && !token) {
+                        submitBtn.disabled = true;
+                        authMsg.textContent = 'Сессия истекла. Войдите через Discord заново.';
+                    } else if (currentUser && !isBanned(currentUser.id)) {
                         submitBtn.disabled = false;
                         submitBtn.querySelector('i').className = 'fas fa-paper-plane';
                         authMsg.textContent = '';
                     } else if (currentUser && isBanned(currentUser.id)) {
                         submitBtn.disabled = true;
                         authMsg.textContent = 'Вы забанены и не можете оставлять отзывы.';
-                    } else if (currentUser && !token) {
-                        submitBtn.disabled = true;
-                        authMsg.textContent = 'Сессия истекла. Войдите через Discord заново.';
                     } else {
                         submitBtn.disabled = true;
                         authMsg.textContent = 'Войдите через Discord, чтобы оставить отзыв.';
@@ -1179,7 +1170,6 @@
             }
 
             async function fetchStats() {
-
                 try {
                     const response = await fetch(API.statistics);
                     if (!response.ok) throw new Error(`Ошибка статистики: ${response.status}`);
@@ -1381,10 +1371,7 @@
                 if (response.ok) {
                     try {
                         const data = JSON.parse(text);
-                        const newToken = extractField(data, ['token', 'accessToken', 'refreshToken']);
-                        if (newToken) {
-                            setAuthToken(newToken);
-                        }
+                        updateTokenFromPayload(data);
                     } catch (e) {}
                     return true;
                 } else {
@@ -1412,10 +1399,7 @@
                 if (response.ok) {
                     try {
                         const data = JSON.parse(text);
-                        const newToken = extractField(data, ['token', 'accessToken', 'refreshToken']);
-                        if (newToken) {
-                            setAuthToken(newToken);
-                        }
+                        updateTokenFromPayload(data);
                     } catch (e) {}
                     return true;
                 } else {
@@ -1484,32 +1468,54 @@
             }
 
             async function fetchReviews() {
-                const hadToken = !!token;
                 try {
                     let url = API.getReviews;
                     if (token) {
                         url += `&token=${encodeURIComponent(token)}`;
                     }
                     const response = await fetch(url);
+                    const responseText = await response.text();
                     if (!response.ok) throw new Error(`Ошибка загрузки отзывов: ${response.status}`);
-                    const data = await response.json();
 
-                    const normalized = normalizeReviewsResponse(data);
+                    let data;
+                    try {
+                        data = responseText ? JSON.parse(responseText) : [];
+                    } catch (e) {
+                        if (responseLooksLikeInvalidToken(responseText)) {
+                            clearInvalidToken();
+                        }
+                        throw new Error('Некорректный JSON в getReviews');
+                    }
 
-                    if (normalized.tokenSeen) {
-                        const freshToken = normalized.tokenValue || '';
-                        if (freshToken) {
-                            setAuthToken(freshToken);
-                        } else if (hadToken) {
-                            invalidateSession('Токен отзывов больше не действителен. Войдите заново.');
+                    if (responseLooksLikeInvalidToken(data)) {
+                        clearInvalidToken();
+                        comments = [];
+                        renderComments();
+                        updateAverageRating();
+                        return;
+                    }
+
+                    updateTokenFromPayload(data);
+
+                    let reviewsArray = [];
+                    if (Array.isArray(data)) {
+                        reviewsArray = data.filter(item => item && typeof item === 'object' && !extractField(item, ['token', 'accessToken', 'access_token', 'refreshToken']));
+                        const nestedArray = data.find(Array.isArray);
+                        if (Array.isArray(nestedArray)) {
+                            reviewsArray = nestedArray;
+                        }
+                    } else if (data && typeof data === 'object') {
+                        reviewsArray = data.reviews || data.comments || data.data || data.items || [];
+                        if (!Array.isArray(reviewsArray) && Array.isArray(data.result)) {
+                            reviewsArray = data.result;
                         }
                     }
 
-                    comments = normalized.reviews.map((item, index) => {
+                    comments = reviewsArray.map((item, index) => {
                         const id = extractField(item, ['reviewId', 'reviewID', 'id', 'commentId']) || `temp-${index}`;
                         const userId = extractField(item, ['authorID', 'authorId', 'userId', 'userID']) || 'unknown';
                         const userName = extractField(item, ['authorName', 'userName', 'username', 'author']) || 'Аноним';
-                        const rating = Number(extractField(item, ['rating']) || 5);
+                        const rating = Number(extractField(item, ['rating'])) || 5;
                         const comment = extractField(item, ['reviewText', 'comment', 'text', 'message']) || '';
                         let date = extractField(item, ['timestamp', 'date', 'createdAt', 'time']);
                         if (typeof date === 'number') {
@@ -1517,8 +1523,8 @@
                         } else if (!date) {
                             date = new Date().toLocaleString();
                         }
-                        const likes = Number(extractField(item, ['likes']) || 0);
-                        const dislikes = Number(extractField(item, ['dislikes']) || 0);
+                        const likes = Number(extractField(item, ['likes'])) || 0;
+                        const dislikes = Number(extractField(item, ['dislikes'])) || 0;
                         const myRating = extractField(item, ['myRating']) || 'none';
 
                         return {
@@ -1536,6 +1542,7 @@
 
                     renderComments();
                     updateAverageRating();
+                    updateAuthUI();
                 } catch (err) {
                     console.error('Ошибка загрузки отзывов:', err);
                     comments = [];
@@ -1543,69 +1550,60 @@
                 }
             }
 
-            // ИСПРАВЛЕННАЯ ФУНКЦИЯ submitReview (POST с text/plain)
-
             async function submitReview(rating, text) {
                 if (!token) {
                     showNotif('🔒 Требуется вход', 'Войдите через Discord');
                     return false;
                 }
-
-                const reviewText = String(text || '').trim();
-                if (!reviewText) {
+                const cleanText = String(text || '').trim();
+                if (!cleanText) {
                     showNotif('⚠️ Пустой отзыв', 'Введите текст отзыва');
                     return false;
                 }
-                if (reviewText.length > 1500) {
+                if (cleanText.length > 1500) {
                     alert('Комментарий слишком длинный (макс. 1500 символов)');
                     return false;
                 }
-
                 return new Promise((resolve) => {
                     const url = `${API.sendReview}&token=${encodeURIComponent(token)}&rating=${encodeURIComponent(String(rating))}`;
                     const xhr = new XMLHttpRequest();
                     xhr.open('POST', url, true);
                     xhr.setRequestHeader('Content-Type', 'text/plain;charset=UTF-8');
 
-                    xhr.onload = function() {
-                        const raw = xhr.responseText || '';
-                        const normalizedRaw = raw.trim();
+                    xhr.onload = async function() {
+                        const responseText = xhr.responseText || '';
+                        let data = null;
+                        try {
+                            data = responseText ? JSON.parse(responseText) : null;
+                        } catch (e) {}
 
                         if (xhr.status >= 200 && xhr.status < 300) {
-                            try {
-                                const maybeJson = normalizedRaw ? JSON.parse(normalizedRaw) : null;
-                                const newToken = maybeJson ? extractField(maybeJson, ['token', 'accessToken', 'refreshToken']) : null;
-                                if (typeof newToken === 'string') {
-                                    if (newToken.trim()) {
-                                        setAuthToken(newToken);
-                                    } else {
-                                        invalidateSession('Сервер сбросил токен. Войдите через Discord ещё раз.');
-                                    }
-                                }
-                            } catch (e) {}
+                            if (responseLooksLikeInvalidToken(data || responseText)) {
+                                clearInvalidToken();
+                                resolve(false);
+                                return;
+                            }
 
+                            updateTokenFromPayload(data);
+                            await fetchReviews();
                             resolve(true);
                             return;
                         }
 
-                        console.error('Ошибка отправки отзыва:', xhr.status, raw);
-                        if (/invalid\s*token/i.test(normalizedRaw)) {
-                            invalidateSession('Токен стал недействительным. Войдите через Discord заново.');
-                            resolve(false);
-                            return;
+                        console.error('Ошибка отправки отзыва:', xhr.status, responseText);
+                        if (responseLooksLikeInvalidToken(data || responseText)) {
+                            clearInvalidToken();
+                        } else {
+                            showNotif('❌ Ошибка', responseText || 'Не удалось отправить отзыв');
                         }
-
-                        showNotif('❌ Ошибка', normalizedRaw || 'Не удалось отправить отзыв');
                         resolve(false);
                     };
-
                     xhr.onerror = function() {
                         console.error('Сетевая ошибка');
                         showNotif('❌ Ошибка', 'Сетевая ошибка');
                         resolve(false);
                     };
-
-                    xhr.send(reviewText);
+                    xhr.send(cleanText);
                 });
             }
 
@@ -1620,8 +1618,8 @@
                     const responseText = await response.text();
 
                     if (!response.ok) {
-                        if (/invalid\s*token/i.test(responseText || '')) {
-                            invalidateSession('Токен стал недействительным. Войдите через Discord заново.');
+                        if (responseLooksLikeInvalidToken(responseText)) {
+                            clearInvalidToken();
                             return false;
                         }
                         throw new Error(`HTTP ${response.status}`);
@@ -1629,11 +1627,17 @@
 
                     try {
                         const data = JSON.parse(responseText);
-                        const newToken = extractField(data, ['token', 'accessToken', 'refreshToken']);
-                        if (newToken) {
-                            setAuthToken(newToken);
+                        if (responseLooksLikeInvalidToken(data)) {
+                            clearInvalidToken();
+                            return false;
                         }
-                    } catch (e) {}
+                        updateTokenFromPayload(data);
+                    } catch (e) {
+                        if (responseLooksLikeInvalidToken(responseText)) {
+                            clearInvalidToken();
+                            return false;
+                        }
+                    }
 
                     return true;
                 } catch (err) {
@@ -1654,8 +1658,8 @@
                     const responseText = await response.text();
 
                     if (!response.ok) {
-                        if (/invalid\s*token/i.test(responseText || '')) {
-                            invalidateSession('Токен стал недействительным. Войдите через Discord заново.');
+                        if (responseLooksLikeInvalidToken(responseText)) {
+                            clearInvalidToken();
                             return false;
                         }
                         throw new Error(`HTTP ${response.status}`);
@@ -1663,11 +1667,17 @@
 
                     try {
                         const data = JSON.parse(responseText);
-                        const newToken = extractField(data, ['token', 'accessToken', 'refreshToken']);
-                        if (newToken) {
-                            setAuthToken(newToken);
+                        if (responseLooksLikeInvalidToken(data)) {
+                            clearInvalidToken();
+                            return false;
                         }
-                    } catch (e) {}
+                        updateTokenFromPayload(data);
+                    } catch (e) {
+                        if (responseLooksLikeInvalidToken(responseText)) {
+                            clearInvalidToken();
+                            return false;
+                        }
+                    }
 
                     return true;
                 } catch (err) {
@@ -1760,7 +1770,7 @@
             }
 
             window.deleteComment = async function(commentId) {
-                if (!currentUser || !token) {
+                if (!currentUser) {
                     showNotif('🔒 Требуется вход', 'Войдите через Discord');
                     return;
                 }
@@ -1772,7 +1782,7 @@
             };
 
             window.rateComment = async function(commentId, ratingValue) {
-                if (!currentUser || !token) {
+                if (!currentUser) {
                     showNotif('🔒 Требуется вход', 'Войдите через Discord');
                     return;
                 }
@@ -1948,9 +1958,8 @@
 
             document.getElementById('submitFeedback').addEventListener('click', async function(e) {
                 e.preventDefault();
-                if (!currentUser || !token) {
+                if (!currentUser) {
                     showNotif('🔒 Требуется вход', 'Войдите через Discord');
-                    if (!token) invalidateSession('Сессия истекла. Войдите через Discord заново.');
                     login();
                     return;
                 }
