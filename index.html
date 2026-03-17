@@ -1725,7 +1725,7 @@
                     },
                     async () => {
                         const url = `${API.sendReview}&token=${encodeURIComponent(token)}&rating=${encodeURIComponent(rating)}&comment=${encodeURIComponent(text)}`;
-                        const response = await fetch(url, { method: 'GET' });
+                        const response = await fetch(url, { method: 'POST' });
                         return readResponsePayload(response);
                     }
                 ];
