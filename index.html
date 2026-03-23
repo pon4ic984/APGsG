@@ -16,6 +16,7 @@
     <link rel="manifest" href="/site.webmanifest" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
+        /* все стили как в предыдущих версиях */
         *,
         *::before,
         *::after {
@@ -1471,114 +1472,67 @@
             }
 
             async function assignSingleRole(roleId) {
-    if (!token) {
-        showNotif('🔒 Требуется вход', 'Сначала авторизуйтесь через Discord');
-        return false;
-    }
-    const url = `${API.addRoles}&roles=${roleId}&token=${token}`;
-    try {
-        const response = await fetch(url);
-        const text = await response.text();
-
-        if (response.ok) {
-            try {
-                const data = JSON.parse(text);
-                const newToken = extractField(data, ['token', 'accessToken', 'refreshToken']);
-                if (newToken) {
-                    token = newToken;
-                    localStorage.setItem('apgsg_token', token);
+                if (!token) {
+                    showNotif('🔒 Требуется вход', 'Сначала авторизуйтесь через Discord');
+                    return false;
                 }
-            } catch (e) {}
-            return true;
-        } else {
-            if (text.toLowerCase().includes('invalid') && text.toLowerCase().includes('token')) {
-                showNotif('❌ Сессия истекла', 'Пожалуйста, войдите заново');
-                logout();
-            } else {
-                showNotif('❌ Ошибка', `Сервер вернул: ${text.slice(0, 200)}`);
+                const url = `${API.addRoles}&roles=${roleId}&token=${token}`;
+                const response = await fetch(url);
+                const text = await response.text();
+
+                if (response.ok) {
+                    try {
+                        const data = JSON.parse(text);
+                        const newToken = extractField(data, ['token', 'accessToken', 'refreshToken']);
+                        if (newToken) {
+                            token = newToken;
+                            localStorage.setItem('apgsg_token', token);
+                        }
+                    } catch (e) {}
+                    return true;
+                } else {
+                    if (response.status === 400 || response.status === 500 || text.includes('invalid')) {
+                        showNotif('❌ Сессия истекла', 'Пожалуйста, войдите заново');
+                        logout();
+                    } else {
+                        const snippet = text.length > 200 ? text.substring(0, 200) + '…' : text;
+                        showNotif('❌ Ошибка', `Сервер вернул: ${snippet}`);
+                    }
+                    return false;
+                }
             }
-            return false;
-        }
-    } catch (err) {
-        console.error('Сетевая ошибка:', err);
-        showNotif('❌ Ошибка', 'Не удалось выполнить запрос');
-        return false;
-    }
-}
 
-async function assignMultipleRoles(roleIds) {
-    if (!token) {
-        showNotif('❌ Ошибка', 'Нет токена для массовой выдачи');
-        return false;
-    }
-    const rolesStr = roleIds.join(',');
-    const url = `${API.addRoles}&roles=${rolesStr}&token=${token}`;
-
-    try {
-        const response = await fetch(url);
-        const text = await response.text();
-
-        if (response.ok) {
-            try {
-                const data = JSON.parse(text);
-                const newToken = extractField(data, ['token', 'accessToken', 'refreshToken']);
-                if (newToken) {
-                    token = newToken;
-                    localStorage.setItem('apgsg_token', token);
+            async function assignMultipleRoles(roleIds) {
+                if (!token) {
+                    showNotif('❌ Ошибка', 'Нет токена для массовой выдачи');
+                    return false;
                 }
-            } catch (e) {}
-            return true;
-        } else {
-            if (text.toLowerCase().includes('invalid') && text.toLowerCase().includes('token')) {
-                showNotif('❌ Сессия истекла', 'Пожалуйста, войдите заново');
-                logout();
-            } else {
-                showNotif('❌ Ошибка', `Сервер вернул: ${text.slice(0, 200)}`);
+                const rolesStr = roleIds.join(',');
+                const url = `${API.addRoles}&roles=${rolesStr}&token=${token}`;
+                const response = await fetch(url);
+                const text = await response.text();
+
+                if (response.ok) {
+                    try {
+                        const data = JSON.parse(text);
+                        const newToken = extractField(data, ['token', 'accessToken', 'refreshToken']);
+                        if (newToken) {
+                            token = newToken;
+                            localStorage.setItem('apgsg_token', token);
+                        }
+                    } catch (e) {}
+                    return true;
+                } else {
+                    if (response.status === 400 || response.status === 500 || text.includes('invalid')) {
+                        showNotif('❌ Сессия истекла', 'Пожалуйста, войдите заново');
+                        logout();
+                    } else {
+                        const snippet = text.length > 200 ? text.substring(0, 200) + '…' : text;
+                        showNotif('❌ Ошибка', `Сервер вернул: ${snippet}`);
+                    }
+                    return false;
+                }
             }
-            return false;
-        }
-    } catch (err) {
-        console.error('Сетевая ошибка:', err);
-        showNotif('❌ Ошибка', 'Не удалось выполнить запрос');
-        return false;
-    }
-}
-
-    const url = `${API.addRoles}`;
-    const payload = { roles: roleIds };
-
-    try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(payload)
-        });
-
-        const text = await response.text();
-        if (response.ok) {
-            try {
-                const data = JSON.parse(text);
-                const newToken = extractField(data, ['token', 'accessToken', 'refreshToken']);
-                if (newToken) {
-                    token = newToken;
-                    localStorage.setItem('apgsg_token', token);
-                }
-            } catch (e) {}
-            return true;
-        } else {
-            console.error('Ошибка массовой выдачи:', text);
-            showNotif('❌ Ошибка', `Сервер вернул: ${text.slice(0, 200)}`);
-            return false;
-        }
-    } catch (err) {
-        console.error('Сетевая ошибка:', err);
-        showNotif('❌ Ошибка', 'Не удалось выполнить запрос');
-        return false;
-    }
-}
 
             async function assignRoleFromPopup() {
                 if (!currentGame) return;
