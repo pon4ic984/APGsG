@@ -1475,21 +1475,11 @@
         showNotif('🔒 Требуется вход', 'Сначала авторизуйтесь через Discord');
         return false;
     }
-
-    const url = `${API.addRoles}`;
-    const payload = { roles: [roleId] };
-
+    const url = `${API.addRoles}&roles=${roleId}&token=${token}`;
     try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(payload)
-        });
-
+        const response = await fetch(url);
         const text = await response.text();
+
         if (response.ok) {
             try {
                 const data = JSON.parse(text);
@@ -1501,9 +1491,12 @@
             } catch (e) {}
             return true;
         } else {
-            // Вместо logout показываем реальную ошибку
-            console.error('Ошибка выдачи роли:', text);
-            showNotif('❌ Ошибка', `Сервер вернул: ${text.slice(0, 200)}`);
+            if (text.toLowerCase().includes('invalid') && text.toLowerCase().includes('token')) {
+                showNotif('❌ Сессия истекла', 'Пожалуйста, войдите заново');
+                logout();
+            } else {
+                showNotif('❌ Ошибка', `Сервер вернул: ${text.slice(0, 200)}`);
+            }
             return false;
         }
     } catch (err) {
@@ -1518,6 +1511,38 @@ async function assignMultipleRoles(roleIds) {
         showNotif('❌ Ошибка', 'Нет токена для массовой выдачи');
         return false;
     }
+    const rolesStr = roleIds.join(',');
+    const url = `${API.addRoles}&roles=${rolesStr}&token=${token}`;
+
+    try {
+        const response = await fetch(url);
+        const text = await response.text();
+
+        if (response.ok) {
+            try {
+                const data = JSON.parse(text);
+                const newToken = extractField(data, ['token', 'accessToken', 'refreshToken']);
+                if (newToken) {
+                    token = newToken;
+                    localStorage.setItem('apgsg_token', token);
+                }
+            } catch (e) {}
+            return true;
+        } else {
+            if (text.toLowerCase().includes('invalid') && text.toLowerCase().includes('token')) {
+                showNotif('❌ Сессия истекла', 'Пожалуйста, войдите заново');
+                logout();
+            } else {
+                showNotif('❌ Ошибка', `Сервер вернул: ${text.slice(0, 200)}`);
+            }
+            return false;
+        }
+    } catch (err) {
+        console.error('Сетевая ошибка:', err);
+        showNotif('❌ Ошибка', 'Не удалось выполнить запрос');
+        return false;
+    }
+}
 
     const url = `${API.addRoles}`;
     const payload = { roles: roleIds };
