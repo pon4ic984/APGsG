@@ -3,18 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="APGSG Gaming Community — крупнейшее Discord-сообщество геймеров. Найди команду, общайся, участвуй в жизни сервера.">
-    <meta name="keywords" content="APGsG, Discord, игровое сообщество, поиск команды, CS2, Dota 2, Valorant, Apex Legends, геймеры, найти тиммейтов">
+    <meta name="description" content="APGsG Gaming Community — русскоязычное Discord-сообщество для поиска тиммейтов, общения и совместной игры в CS2, Dota 2, Valorant, Apex Legends, Minecraft и другие игры.">
+    <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+    <meta name="theme-color" content="#08090D">
     <meta name="apple-mobile-web-app-title" content="APGsG">
     <meta name="application-name" content="APGsG">
     <title>APGsG Gaming Community — Найди свою команду</title>
+    <link rel="canonical" href="https://search.apgsg.ru/">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="APGsG Gaming Community">
+    <meta property="og:title" content="APGsG Gaming Community — Найди свою команду">
+    <meta property="og:description" content="Найди команду, общайся и играй вместе с участниками APGsG в Discord.">
+    <meta property="og:url" content="https://search.apgsg.ru/">
+    <meta property="og:image" content="https://i.ibb.co/2YmkKV7G/source-v2.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="APGsG Gaming Community — Найди свою команду">
+    <meta name="twitter:description" content="Найди команду, общайся и играй вместе с участниками APGsG в Discord.">
+    <meta name="twitter:image" content="https://i.ibb.co/2YmkKV7G/source-v2.png">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="shortcut icon" href="/favicon.ico" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <link rel="manifest" href="/site.webmanifest" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "APGsG Gaming Community",
+      "url": "https://search.apgsg.ru/",
+      "description": "Discord-сообщество для поиска тиммейтов и совместной игры.",
+      "inLanguage": "ru-RU",
+      "publisher": {
+        "@type": "Organization",
+        "name": "APGsG Gaming Community",
+        "url": "https://search.apgsg.ru/",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://i.ibb.co/2YmkKV7G/source-v2.png"
+        }
+      }
+    }
+    </script>
     <style>
         /* все стили как в предыдущих версиях */
         *,
@@ -684,6 +714,7 @@
     </style>
 </head>
 <body>
+    <noscript><div style="position:sticky;top:0;z-index:5000;padding:12px 16px;background:#14161E;color:#fff;text-align:center;border-bottom:1px solid rgba(255,255,255,0.08)">Для корректной работы сайта включите JavaScript.</div></noscript>
     <div class="bg-effects">
         <div class="bg-orb bg-orb-1"></div>
         <div class="bg-orb bg-orb-2"></div>
@@ -708,7 +739,7 @@
             <div class="nav-right">
                 <div id="authSection"></div>
                 <button class="theme-btn" id="themeToggle" aria-label="Переключить тему"><i class="fas fa-moon"></i></button>
-                <a href="https://discord.gg/x7PH4TBJdt" class="btn btn-discord" target="_blank"><i class="fab fa-discord"></i> Присоединиться</a>
+                <a href="https://discord.gg/x7PH4TBJdt" class="btn btn-discord" target="_blank" rel="noopener noreferrer"><i class="fab fa-discord"></i> Присоединиться</a>
             </div>
         </div>
     </header>
@@ -718,7 +749,7 @@
         <p>Присоединяйся к Discord и найди свою команду!</p>
     </div>
 
-    <a href="https://discord.gg/x7PH4TBJdt" class="discord-fab" target="_blank" title="Discord"><i class="fab fa-discord"></i></a>
+    <a href="https://discord.gg/x7PH4TBJdt" class="discord-fab" target="_blank" rel="noopener noreferrer" title="Discord"><i class="fab fa-discord"></i></a>
 
     <section id="home" class="hero">
         <div class="container">
@@ -733,11 +764,11 @@
                         <div class="stat-box"><span class="stat-val" id="gamingMembers">--</span><span class="stat-lbl">В игре</span></div>
                     </div>
                     <div class="search-bar">
-                        <input type="text" class="search-input" placeholder="🔍 Поиск игры..." id="gameSearch">
+                        <input type="text" class="search-input" placeholder="🔍 Поиск игры..." id="gameSearch" aria-label="Поиск игры">
                         <button class="btn-random" id="randomTeamBtn"><i class="fas fa-dice"></i> Случайная</button>
                     </div>
                     <div class="hero-btns">
-                        <a href="https://discord.gg/x7PH4TBJdt" class="btn btn-glow" target="_blank"><i class="fab fa-discord"></i> Присоединиться к серверу</a>
+                        <a href="https://discord.gg/x7PH4TBJdt" class="btn btn-glow" target="_blank" rel="noopener noreferrer"><i class="fab fa-discord"></i> Присоединиться к серверу</a>
                         <a href="#features" class="btn btn-secondary">Узнать больше <i class="fas fa-arrow-right"></i></a>
                     </div>
                 </div>
@@ -828,7 +859,7 @@
                 <div class="info-section" id="rules-content"><h3>Правила сообщества</h3><p>Для поддержания дружелюбной атмосферы:</p><ul><li>Уважайте всех участников сообщества</li><li>Запрещены оскорбления, дискриминация и токсичное поведение</li><li>Не распространяйте личную информацию других</li><li>Запрещён NSFW контент</li><li>Спам и реклама без разрешения запрещены</li></ul></div>
                 <div class="info-section" id="moderation-content"><h3>Система модерации</h3><p>Модераторы работают 24/7. Уровни нарушений:</p><ul><li>1 нарушение — предупреждение</li><li>2 нарушения — мут на 24 часа</li><li>3 нарушения — мут на 7 дней</li><li>4 нарушения — перманентный бан</li></ul></div>
                 <div class="info-section" id="help-content"><h3>Помощь и поддержка</h3><ul><li>Техпроблемы: канал #тех-поддержка</li><li>Проблемы с пользователями: пишите модераторам</li><li>Предложения: канал #предложения</li></ul></div>
-                <div class="info-section" id="contacts-content"><h3>Контакты</h3><ul><li>Discord: <a href="https://discord.gg/x7PH4TBJdt" target="_blank" style="color: var(--primary-light); text-decoration: none;">discord.gg/x7PH4TBJdt</a></li><li>Сотрудничество: много хотите</li><li>Поддержка: дс @pon4icc</li></ul></div>
+                <div class="info-section" id="contacts-content"><h3>Контакты</h3><ul><li>Discord: <a href="https://discord.gg/x7PH4TBJdt" target="_blank" rel="noopener noreferrer" style="color: var(--primary-light); text-decoration: none;">discord.gg/x7PH4TBJdt</a></li><li>Сотрудничество: свяжитесь с администрацией в Discord</li><li>Поддержка: Discord @pon4icc</li></ul></div>
                 <div class="info-section" id="faq-content"><h3>FAQ</h3><p><strong>Как присоединиться?</strong><br>Нажмите «Присоединиться» или используйте discord.gg/x7PH4TBJdt</p><p><strong>Как найти тиммейтов?</strong><br>Используйте #поиск-команды или голосовые каналы.</p></div>
                 <div class="info-section" id="feedback-content">
                     <h3>Отзывы и комментарии</h3>
@@ -862,7 +893,7 @@
                 <div class="footer-info">
                     <a href="#home" class="logo"><img src="https://i.ibb.co/2YmkKV7G/source-v2.png" alt="APGsG" class="logo-img"><span>APGsG</span></a>
                     <p class="footer-desc">Крупнейшее игровое сообщество Discord.</p>
-                    <div class="social-links"><a href="https://discord.gg/x7PH4TBJdt" class="social-link" target="_blank"><i class="fab fa-discord"></i></a></div>
+                    <div class="social-links"><a href="https://discord.gg/x7PH4TBJdt" class="social-link" target="_blank" rel="noopener noreferrer"><i class="fab fa-discord"></i></a></div>
                 </div>
                 <div class="footer-links-grid">
                     <div class="footer-col"><h4>Сообщество</h4><ul><li><a data-tab="about">О нас</a></li><li><a data-tab="rules">Правила</a></li><li><a data-tab="moderation">Модерация</a></li></ul></div>
@@ -1090,6 +1121,7 @@
                 authInProgress = false;
                 authorizeRequestRunning = false;
                 sessionStorage.removeItem('apgsg_auth_in_progress');
+                sessionStorage.removeItem('apgsg_oauth_state');
             }
 
             async function fetchTextWithTimeout(url, timeoutMs = 15000) {
@@ -1149,8 +1181,18 @@
                 const urlParams = new URLSearchParams(window.location.search);
                 const code = urlParams.get('code');
                 const authError = urlParams.get('error');
+                const returnedState = urlParams.get('state');
+                const storedState = sessionStorage.getItem('apgsg_oauth_state');
 
                 if (code) {
+                    if (storedState && returnedState && storedState !== returnedState) {
+                        window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+                        saveAuthState(null, null);
+                        clearPendingOAuth();
+                        updateAuthUI();
+                        showNotif('❌ Ошибка', 'Проверка авторизации не пройдена');
+                        return;
+                    }
                     authInProgress = true;
                     sessionStorage.setItem('apgsg_auth_in_progress', '1');
                     window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
@@ -1207,7 +1249,11 @@
             }
 
             function login() {
-                const url = `https://discord.com/api/oauth2/authorize?client_id=${CONFIG.CLIENT_ID}&redirect_uri=${encodeURIComponent(CONFIG.REDIRECT_URI)}&response_type=code&scope=identify+guilds.join`;
+                const state = (window.crypto && crypto.randomUUID)
+                    ? crypto.randomUUID()
+                    : `state-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+                sessionStorage.setItem('apgsg_oauth_state', state);
+                const url = `https://discord.com/api/oauth2/authorize?client_id=${CONFIG.CLIENT_ID}&redirect_uri=${encodeURIComponent(CONFIG.REDIRECT_URI)}&response_type=code&scope=identify+guilds.join&state=${encodeURIComponent(state)}`;
                 window.location.href = url;
             }
 
@@ -1237,7 +1283,7 @@
                     authSection.innerHTML = `
                         <div class="user-info">
                             <div class="user-badge">
-                                <img src="${avatarUrl}" alt="avatar">
+                                <img src="${escapeAttr(avatarUrl)}" alt="Аватар пользователя" loading="lazy">
                                 <span class="user-name">${escapeHtml(currentUser.username)}</span>
                             </div>
                             ${isAdmin() ? '<button class="btn-mini btn-admin" id="adminOpenBtn"><i class="fas fa-shield-halved"></i> Админка</button>' : ''}
@@ -1282,9 +1328,9 @@
                     const response = await fetch(API.statistics);
                     if (!response.ok) throw new Error(`Ошибка статистики: ${response.status}`);
                     const data = await response.json();
-                    const online = data.Online || 0;
-                    const total = data.Total || 0;
-                    const inGame = data.InGame || 0;
+                    const online = Number(extractField(data, ['Online', 'online'])) || 0;
+                    const total = Number(extractField(data, ['Total', 'total', 'members'])) || 0;
+                    const inGame = Number(extractField(data, ['InGame', 'inGame', 'gaming'])) || 0;
 
                     document.getElementById('totalMembers').textContent = total;
                     document.getElementById('onlineMembers').textContent = online;
@@ -1407,32 +1453,39 @@
                 selectedGames.clear();
                 updateSelectedCount();
                 games.forEach(game => {
+                    const gameId = String(game.id);
+                    const safeGameId = escapeAttr(gameId);
+                    const safeName = escapeHtml(String(game.name || 'Игра'));
+                    const safeNameAttr = escapeAttr(String(game.name || 'Игра'));
+                    const safeImage = escapeAttr(String(game.image || ''));
+                    const fallbackSvg = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="300" height="150"><rect width="300" height="150" fill="#333"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#fff" font-size="16">${String(game.name || 'Игра')}</text></svg>`)}`;
+
                     const card = document.createElement('div');
                     card.className = 'game-card';
-                    card.dataset.game = game.id;
+                    card.dataset.game = gameId;
 
                     const checkbox = document.createElement('div');
                     checkbox.className = 'game-checkbox';
                     checkbox.innerHTML = `
-                        <input type="checkbox" id="game-${game.id}" value="${game.id}">
-                        <label for="game-${game.id}" class="checkmark">✓</label>
+                        <input type="checkbox" id="game-${safeGameId}" value="${safeGameId}">
+                        <label for="game-${safeGameId}" class="checkmark" aria-label="Выбрать ${safeNameAttr}">✓</label>
                     `;
                     const input = checkbox.querySelector('input');
                     input.addEventListener('change', (e) => {
                         if (e.target.checked) {
-                            selectedGames.add(game.id);
+                            selectedGames.add(gameId);
                         } else {
-                            selectedGames.delete(game.id);
+                            selectedGames.delete(gameId);
                         }
                         updateSelectedCount();
                     });
 
                     card.innerHTML = `
                         <div class="game-thumb">
-                            <img src="${game.image}" alt="${game.name}" onerror="this.src='data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22300%22%20height%3D%22150%22%3E%3Crect%20width%3D%22300%22%20height%3D%22150%22%20fill%3D%22%23333%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%20font-size%3D%2216%22%3E${game.name}%3C%2Ftext%3E%3C%2Fsvg%3E'">
+                            <img src="${safeImage}" alt="${safeNameAttr}" loading="lazy" onerror="this.src='${fallbackSvg}'">
                             <div class="game-thumb-overlay"></div>
                         </div>
-                        <div class="game-body"><h4>${game.name}</h4></div>
+                        <div class="game-body"><h4>${safeName}</h4></div>
                     `;
                     card.appendChild(checkbox);
 
@@ -1472,87 +1525,67 @@
             }
 
             async function assignSingleRole(roleId) {
-    if (!token) {
-        showNotif('🔒 Требуется вход', 'Сначала авторизуйтесь через Discord');
-        return false;
-    }
+                if (!token) {
+                    showNotif('🔒 Требуется вход', 'Сначала авторизуйтесь через Discord');
+                    return false;
+                }
+                const url = `${API.addRoles}&roles=${encodeURIComponent(String(roleId))}&token=${encodeURIComponent(String(token))}`;
+                const response = await fetch(url);
+                const text = await response.text();
 
-    try {
-        const url = `${API.addRoles}&roles=${encodeURIComponent(String(roleId))}&token=${encodeURIComponent(String(token))}`;
-        const response = await fetch(url);
-        const text = await response.text();
-
-        console.log('addRoles response:', response.status, text);
-
-        if (!response.ok) {
-            if (/invalid token/i.test(text)) {
-                showNotif('❌ Сессия истекла', 'Пожалуйста, войдите заново');
-                logout();
-                return false;
+                if (response.ok) {
+                    try {
+                        const data = JSON.parse(text);
+                        const newToken = extractField(data, ['token', 'accessToken', 'refreshToken']);
+                        if (newToken) {
+                            token = newToken;
+                            localStorage.setItem('apgsg_token', token);
+                        }
+                    } catch (e) {}
+                    return true;
+                } else {
+                    if (response.status === 400 || response.status === 500 || text.includes('invalid')) {
+                        showNotif('❌ Сессия истекла', 'Пожалуйста, войдите заново');
+                        logout();
+                    } else {
+                        const snippet = text.length > 200 ? text.substring(0, 200) + '…' : text;
+                        showNotif('❌ Ошибка', `Сервер вернул: ${snippet}`);
+                    }
+                    return false;
+                }
             }
 
-            showNotif('❌ Ошибка', `Сервер вернул ${response.status}: ${text || 'пустой ответ'}`);
-            return false;
-        }
+            async function assignMultipleRoles(roleIds) {
+                if (!token) {
+                    showNotif('❌ Ошибка', 'Нет токена для массовой выдачи');
+                    return false;
+                }
+                const rolesStr = roleIds.join(',');
+                const url = `${API.addRoles}&roles=${encodeURIComponent(rolesStr)}&token=${encodeURIComponent(String(token))}`;
+                const response = await fetch(url);
+                const text = await response.text();
 
-        try {
-            const data = JSON.parse(text);
-            const newToken = extractField(data, ['token', 'accessToken', 'refreshToken']);
-            if (newToken) {
-                token = String(newToken);
-                localStorage.setItem('apgsg_token', token);
+                if (response.ok) {
+                    try {
+                        const data = JSON.parse(text);
+                        const newToken = extractField(data, ['token', 'accessToken', 'refreshToken']);
+                        if (newToken) {
+                            token = newToken;
+                            localStorage.setItem('apgsg_token', token);
+                        }
+                    } catch (e) {}
+                    return true;
+                } else {
+                    if (response.status === 400 || response.status === 500 || text.includes('invalid')) {
+                        showNotif('❌ Сессия истекла', 'Пожалуйста, войдите заново');
+                        logout();
+                    } else {
+                        const snippet = text.length > 200 ? text.substring(0, 200) + '…' : text;
+                        showNotif('❌ Ошибка', `Сервер вернул: ${snippet}`);
+                    }
+                    return false;
+                }
             }
-        } catch (_) {}
-
-        return true;
-    } catch (err) {
-        console.error('Ошибка assignSingleRole:', err);
-        showNotif('❌ Ошибка', 'Не удалось выдать роль');
-        return false;
-    }
-}
-
-async function assignMultipleRoles(roleIds) {
-    if (!token) {
-        showNotif('❌ Ошибка', 'Нет токена для массовой выдачи');
-        return false;
-    }
-
-    try {
-        const rolesStr = roleIds.map(id => String(id)).join(',');
-        const url = `${API.addRoles}&roles=${encodeURIComponent(rolesStr)}&token=${encodeURIComponent(String(token))}`;
-        const response = await fetch(url);
-        const text = await response.text();
-
-        console.log('addRoles bulk response:', response.status, text);
-
-        if (!response.ok) {
-            if (/invalid token/i.test(text)) {
-                showNotif('❌ Сессия истекла', 'Пожалуйста, войдите заново');
-                logout();
-                return false;
-            }
-
-            showNotif('❌ Ошибка', `Сервер вернул ${response.status}: ${text || 'пустой ответ'}`);
-            return false;
-        }
-
-        try {
-            const data = JSON.parse(text);
-            const newToken = extractField(data, ['token', 'accessToken', 'refreshToken']);
-            if (newToken) {
-                token = String(newToken);
-                localStorage.setItem('apgsg_token', token);
-            }
-        } catch (_) {}
-
-        return true;
-    } catch (err) {
-        console.error('Ошибка assignMultipleRoles:', err);
-        showNotif('❌ Ошибка', 'Не удалось выдать роли');
-        return false;
-    }
-}
 
             async function assignRoleFromPopup() {
                 if (!currentGame) return;
@@ -1702,7 +1735,7 @@ async function assignMultipleRoles(roleIds) {
                     return false;
                 }
                 if (reviewText.length > 1500) {
-                    alert('Комментарий слишком длинный (макс. 1500 символов)');
+                    showNotif('⚠️ Слишком длинно', 'Комментарий слишком длинный (макс. 1500 символов)');
                     return false;
                 }
 
@@ -1820,11 +1853,22 @@ async function assignMultipleRoles(roleIds) {
 
             function escapeHtml(unsafe) {
                 if (!unsafe) return '';
-                return unsafe.replace(/[&<>"]/g, m => ({
+                return String(unsafe).replace(/[&<>"]/g, m => ({
                     '&': '&amp;',
                     '<': '&lt;',
                     '>': '&gt;',
                     '"': '&quot;'
+                }[m]));
+            }
+
+            function escapeAttr(value) {
+                if (value == null) return '';
+                return String(value).replace(/[&<>"']/g, m => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;'
                 }[m]));
             }
 
@@ -2088,12 +2132,12 @@ async function assignMultipleRoles(roleIds) {
                 }
                 const rating = parseInt(document.querySelector('.rating-value').textContent);
                 if (rating < 1 || rating > 5) {
-                    alert('Поставьте оценку от 1 до 5');
+                    showNotif('⚠️ Оценка не выбрана', 'Поставьте оценку от 1 до 5');
                     return;
                 }
                 const text = document.getElementById('feedback-message').value.trim();
                 if (!text) {
-                    alert('Напишите комментарий');
+                    showNotif('⚠️ Пустой отзыв', 'Напишите комментарий');
                     return;
                 }
                 if (isBanned(currentUser.id)) {
