@@ -1542,9 +1542,15 @@
                     const text = await response.text();
 
                     if (!response.ok) {
-                        console.error('addRoles single error:', response.status, text);
+                        console.error('addRoles single error:', response.status, text, { roleId });
 
                         if (handleInvalidToken(text)) {
+                            return false;
+                        }
+
+                        const trimmedText = String(text || '').trim();
+                        if (response.status === 400 && /^unknown/i.test(trimmedText)) {
+                            showNotif('❌ Роль не выдана', 'Бот не видит эту роль, роль выше бота или ID роли неверный.');
                             return false;
                         }
 
@@ -1576,46 +1582,39 @@
                     return false;
                 }
 
-                try {
-                    const params = new URLSearchParams({
-                        roles: roleIds.map(String).join(','),
-                        token: String(token)
-                    });
-
-                    const url = `${API.addRoles}&${params.toString()}`;
-                    const response = await fetch(url, {
-                        method: 'GET',
-                        cache: 'no-store'
-                    });
-                    const text = await response.text();
-
-                    if (!response.ok) {
-                        console.error('addRoles bulk error:', response.status, text);
-
-                        if (handleInvalidToken(text)) {
-                            return false;
-                        }
-
-                        const snippet = text.length > 300 ? `${text.slice(0, 300)}…` : text;
-                        showNotif('❌ Ошибка', `Сервер вернул ${response.status}: ${snippet || 'пустой ответ'}`);
-                        return false;
-                    }
-
-                    try {
-                        const data = JSON.parse(text);
-                        const newToken = extractField(data, ['token', 'accessToken', 'refreshToken', 'access_token']);
-                        if (newToken) {
-                            token = String(newToken);
-                            localStorage.setItem('apgsg_token', token);
-                        }
-                    } catch (_) {}
-
-                    return true;
-                } catch (err) {
-                    console.error('assignMultipleRoles error:', err);
-                    showNotif('❌ Ошибка', 'Не удалось выдать роли');
+                const normalizedRoleIds = [...new Set(roleIds.map(id => String(id).trim()).filter(Boolean))];
+                if (normalizedRoleIds.length === 0) {
+                    showNotif('❌ Ошибка', 'Не выбраны роли для выдачи');
                     return false;
                 }
+
+                let successCount = 0;
+                const failedRoles = [];
+
+                for (const roleId of normalizedRoleIds) {
+                    const ok = await assignSingleRole(roleId);
+                    if (ok) {
+                        successCount += 1;
+                    } else {
+                        failedRoles.push(roleId);
+                    }
+                }
+
+                if (successCount === normalizedRoleIds.length) {
+                    return true;
+                }
+
+                console.error('addRoles bulk partial failure:', {
+                    successCount,
+                    total: normalizedRoleIds.length,
+                    failedRoles
+                });
+
+                if (successCount > 0) {
+                    showNotif('⚠️ Частично', `Выдано ${successCount} из ${normalizedRoleIds.length}. Проверь права бота и ID ролей.`);
+                }
+
+                return false;
             }
 
             async function assignRoleFromPopup() {
