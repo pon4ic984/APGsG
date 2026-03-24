@@ -1522,15 +1522,22 @@
                 document.getElementById('bulkAssignBtn').disabled = count === 0;
             }
 
-            async function assignSingleRole(roleId) {
+            async function sendAddRolesRequest(roleIds) {
+                const normalizedRoleIds = [...new Set((Array.isArray(roleIds) ? roleIds : [roleIds])
+                    .map(id => String(id).trim())
+                    .filter(Boolean))];
+
                 if (!token) {
-                    showNotif('🔒 Требуется вход', 'Сначала авторизуйтесь через Discord');
-                    return false;
+                    return { ok: false, reason: 'missing_token', normalizedRoleIds, status: 0, text: 'Нет токена' };
+                }
+
+                if (normalizedRoleIds.length === 0) {
+                    return { ok: false, reason: 'empty_roles', normalizedRoleIds, status: 0, text: 'Не выбраны роли' };
                 }
 
                 try {
                     const params = new URLSearchParams({
-                        roles: String(roleId),
+                        roles: normalizedRoleIds.join(','),
                         token: String(token)
                     });
 
@@ -1542,21 +1549,13 @@
                     const text = await response.text();
 
                     if (!response.ok) {
-                        console.error('addRoles single error:', response.status, text, { roleId });
-
-                        if (handleInvalidToken(text)) {
-                            return false;
-                        }
-
-                        const trimmedText = String(text || '').trim();
-                        if (response.status === 400 && /^unknown/i.test(trimmedText)) {
-                            showNotif('❌ Роль не выдана', 'Бот не видит эту роль, роль выше бота или ID роли неверный.');
-                            return false;
-                        }
-
-                        const snippet = text.length > 300 ? `${text.slice(0, 300)}…` : text;
-                        showNotif('❌ Ошибка', `Сервер вернул ${response.status}: ${snippet || 'пустой ответ'}`);
-                        return false;
+                        return {
+                            ok: false,
+                            reason: response.status === 400 ? 'bad_request' : 'http_error',
+                            normalizedRoleIds,
+                            status: response.status,
+                            text
+                        };
                     }
 
                     try {
@@ -1568,12 +1567,45 @@
                         }
                     } catch (_) {}
 
-                    return true;
+                    return { ok: true, normalizedRoleIds, status: response.status, text };
                 } catch (err) {
-                    console.error('assignSingleRole error:', err);
-                    showNotif('❌ Ошибка', 'Не удалось выдать роль');
+                    return {
+                        ok: false,
+                        reason: 'network_error',
+                        normalizedRoleIds,
+                        status: 0,
+                        text: err && err.message ? err.message : String(err || 'Unknown error'),
+                        error: err
+                    };
+                }
+            }
+
+            async function assignSingleRole(roleId, silent = false) {
+                if (!token) {
+                    if (!silent) showNotif('🔒 Требуется вход', 'Сначала авторизуйтесь через Discord');
                     return false;
                 }
+
+                const result = await sendAddRolesRequest([roleId]);
+                if (result.ok) return true;
+
+                console.error('addRoles single error:', result.status, result.text, { roleId, mode: 'single' });
+
+                if (handleInvalidToken(result.text)) {
+                    return false;
+                }
+
+                const trimmedText = String(result.text || '').trim();
+                if (!silent && result.status === 400 && /^unknown\b/i.test(trimmedText)) {
+                    showNotif('❌ Роль не выдана', 'Бот не видит эту роль, роль выше бота или ID роли неверный.');
+                    return false;
+                }
+
+                if (!silent) {
+                    const snippet = trimmedText.length > 300 ? `${trimmedText.slice(0, 300)}…` : trimmedText;
+                    showNotif('❌ Ошибка', `Сервер вернул ${result.status || '0'}: ${snippet || 'пустой ответ'}`);
+                }
+                return false;
             }
 
             async function assignMultipleRoles(roleIds) {
@@ -1588,32 +1620,61 @@
                     return false;
                 }
 
+                const bulkResult = await sendAddRolesRequest(normalizedRoleIds);
+                if (bulkResult.ok) {
+                    console.info('addRoles bulk success:', {
+                        total: normalizedRoleIds.length,
+                        mode: 'comma_separated'
+                    });
+                    return true;
+                }
+
+                console.error('addRoles bulk error:', bulkResult.status, bulkResult.text, {
+                    roleIds: normalizedRoleIds,
+                    mode: 'comma_separated'
+                });
+
+                if (handleInvalidToken(bulkResult.text)) {
+                    return false;
+                }
+
                 let successCount = 0;
                 const failedRoles = [];
 
                 for (const roleId of normalizedRoleIds) {
-                    const ok = await assignSingleRole(roleId);
-                    if (ok) {
-                        successCount += 1;
-                    } else {
-                        failedRoles.push(roleId);
-                    }
+                    const ok = await assignSingleRole(roleId, true);
+                    if (ok) successCount += 1;
+                    else failedRoles.push(roleId);
                 }
 
                 if (successCount === normalizedRoleIds.length) {
+                    console.info('addRoles fallback success:', {
+                        total: normalizedRoleIds.length,
+                        mode: 'single_requests'
+                    });
                     return true;
                 }
 
                 console.error('addRoles bulk partial failure:', {
                     successCount,
                     total: normalizedRoleIds.length,
-                    failedRoles
+                    failedRoles,
+                    bulkError: bulkResult.text
                 });
 
                 if (successCount > 0) {
-                    showNotif('⚠️ Частично', `Выдано ${successCount} из ${normalizedRoleIds.length}. Проверь права бота и ID ролей.`);
+                    showNotif('⚠️ Частично', `Выдано ${successCount} из ${normalizedRoleIds.length}. Остальные роли бот не смог выдать.`);
+                    return false;
                 }
 
+                const trimmedText = String(bulkResult.text || '').trim();
+                if (bulkResult.status === 400 && /^unknown\b/i.test(trimmedText)) {
+                    showNotif('❌ Роли не выданы', 'Сайт уже отправил роли через запятую и потом по одной, но сервер всё равно ответил Unknown. Проверь права бота и ID ролей.');
+                    return false;
+                }
+
+                const snippet = trimmedText.length > 300 ? `${trimmedText.slice(0, 300)}…` : trimmedText;
+                showNotif('❌ Ошибка', `Сервер вернул ${bulkResult.status || '0'}: ${snippet || 'пустой ответ'}`);
                 return false;
             }
 
