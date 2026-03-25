@@ -1522,6 +1522,8 @@
                 document.getElementById('bulkAssignBtn').disabled = count === 0;
             }
 
+            // ========== ИЗМЕНЁННЫЕ ФУНКЦИИ (POST) ==========
+
             async function sendAddRolesRequest(roleIds) {
                 const normalizedRoleIds = [...new Set((Array.isArray(roleIds) ? roleIds : [roleIds])
                     .map(id => String(id).trim())
@@ -1536,15 +1538,13 @@
                 }
 
                 try {
-                    const params = new URLSearchParams({
-                        roles: normalizedRoleIds.join(','),
-                        token: String(token)
-                    });
-
-                    const url = `${API.addRoles}&${params.toString()}`;
-                    const response = await fetch(url, {
-                        method: 'GET',
-                        cache: 'no-store'
+                    const response = await fetch(API.addRoles, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            token: String(token),
+                            roles: normalizedRoleIds
+                        })
                     });
                     const text = await response.text();
 
@@ -1560,7 +1560,7 @@
 
                     try {
                         const data = JSON.parse(text);
-                        const newToken = extractField(data, ['token', 'accessToken', 'refreshToken', 'access_token']);
+                        const newToken = extractField(data, ['token', 'accessToken', 'refreshToken']);
                         if (newToken) {
                             token = String(newToken);
                             localStorage.setItem('apgsg_token', token);
@@ -1579,6 +1579,89 @@
                     };
                 }
             }
+
+            async function deleteMyReview(reviewId) {
+                if (!token) {
+                    showNotif('🔒 Требуется вход', 'Войдите через Discord');
+                    return false;
+                }
+                try {
+                    const response = await fetch(API.deleteReview, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            token: token,
+                            review: String(reviewId)
+                        })
+                    });
+                    const responseText = await response.text();
+
+                    if (!response.ok) {
+                        if (!handleInvalidToken(responseText)) {
+                            throw new Error(responseText || `HTTP ${response.status}`);
+                        }
+                        return false;
+                    }
+
+                    try {
+                        const data = JSON.parse(responseText);
+                        const newToken = extractField(data, ['token', 'accessToken', 'refreshToken']);
+                        if (newToken) {
+                            token = newToken;
+                            localStorage.setItem('apgsg_token', token);
+                        }
+                    } catch (e) {}
+
+                    return true;
+                } catch (err) {
+                    console.error('Ошибка удаления отзыва:', err);
+                    showNotif('❌ Ошибка', 'Не удалось удалить отзыв');
+                    return false;
+                }
+            }
+
+            async function rateReview(reviewId, ratingValue) {
+                if (!token) {
+                    showNotif('🔒 Требуется вход', 'Войдите через Discord');
+                    return false;
+                }
+                try {
+                    const response = await fetch(API.rateReview, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            token: token,
+                            review: String(reviewId),
+                            rating: String(ratingValue)
+                        })
+                    });
+                    const responseText = await response.text();
+
+                    if (!response.ok) {
+                        if (!handleInvalidToken(responseText)) {
+                            throw new Error(responseText || `HTTP ${response.status}`);
+                        }
+                        return false;
+                    }
+
+                    try {
+                        const data = JSON.parse(responseText);
+                        const newToken = extractField(data, ['token', 'accessToken', 'refreshToken']);
+                        if (newToken) {
+                            token = newToken;
+                            localStorage.setItem('apgsg_token', token);
+                        }
+                    } catch (e) {}
+
+                    return true;
+                } catch (err) {
+                    console.error('Ошибка оценки отзыва:', err);
+                    showNotif('❌ Ошибка', 'Не удалось оценить отзыв');
+                    return false;
+                }
+            }
+
+            // ========== КОНЕЦ ИЗМЕНЁННЫХ ФУНКЦИЙ ==========
 
             async function assignSingleRole(roleId, silent = false) {
                 if (!token) {
@@ -1822,7 +1905,6 @@
                 }
             }
 
-            // ИСПРАВЛЕННАЯ ФУНКЦИЯ submitReview (POST raw text)
             async function submitReview(rating, text) {
                 if (!token) {
                     showNotif('🔒 Требуется вход', 'Войдите через Discord');
@@ -1872,74 +1954,6 @@
 
                     xhr.send(reviewText);
                 });
-            }
-
-            async function deleteMyReview(reviewId) {
-                if (!token) {
-                    showNotif('🔒 Требуется вход', 'Войдите через Discord');
-                    return false;
-                }
-                try {
-                    const url = `${API.deleteReview}&token=${encodeURIComponent(token)}&review=${encodeURIComponent(String(reviewId))}`;
-                    const response = await fetch(url);
-                    const responseText = await response.text();
-
-                    if (!response.ok) {
-                        if (!handleInvalidToken(responseText)) {
-                            throw new Error(responseText || `HTTP ${response.status}`);
-                        }
-                        return false;
-                    }
-
-                    try {
-                        const data = JSON.parse(responseText);
-                        const newToken = extractField(data, ['token', 'accessToken', 'refreshToken']);
-                        if (newToken) {
-                            token = newToken;
-                            localStorage.setItem('apgsg_token', token);
-                        }
-                    } catch (e) {}
-
-                    return true;
-                } catch (err) {
-                    console.error('Ошибка удаления отзыва:', err);
-                    showNotif('❌ Ошибка', 'Не удалось удалить отзыв');
-                    return false;
-                }
-            }
-
-            async function rateReview(reviewId, ratingValue) {
-                if (!token) {
-                    showNotif('🔒 Требуется вход', 'Войдите через Discord');
-                    return false;
-                }
-                try {
-                    const url = `${API.rateReview}&token=${encodeURIComponent(token)}&review=${encodeURIComponent(String(reviewId))}&rating=${encodeURIComponent(String(ratingValue))}`;
-                    const response = await fetch(url);
-                    const responseText = await response.text();
-
-                    if (!response.ok) {
-                        if (!handleInvalidToken(responseText)) {
-                            throw new Error(responseText || `HTTP ${response.status}`);
-                        }
-                        return false;
-                    }
-
-                    try {
-                        const data = JSON.parse(responseText);
-                        const newToken = extractField(data, ['token', 'accessToken', 'refreshToken']);
-                        if (newToken) {
-                            token = newToken;
-                            localStorage.setItem('apgsg_token', token);
-                        }
-                    } catch (e) {}
-
-                    return true;
-                } catch (err) {
-                    console.error('Ошибка оценки отзыва:', err);
-                    showNotif('❌ Ошибка', 'Не удалось оценить отзыв');
-                    return false;
-                }
             }
 
             function showNotif(title, text) {
