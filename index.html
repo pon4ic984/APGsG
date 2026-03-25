@@ -1522,7 +1522,7 @@
                 document.getElementById('bulkAssignBtn').disabled = count === 0;
             }
 
-            // ========== ИЗМЕНЁННЫЕ ФУНКЦИИ (POST) ==========
+            // ========== ИСПРАВЛЕННЫЕ ФУНКЦИИ (POST с form-urlencoded) ==========
 
             async function sendAddRolesRequest(roleIds) {
                 const normalizedRoleIds = [...new Set((Array.isArray(roleIds) ? roleIds : [roleIds])
@@ -1538,13 +1538,11 @@
                 }
 
                 try {
+                    const formBody = `token=${encodeURIComponent(token)}&roles=${encodeURIComponent(normalizedRoleIds.join(','))}`;
                     const response = await fetch(API.addRoles, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            token: String(token),
-                            roles: normalizedRoleIds
-                        })
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+                        body: formBody
                     });
                     const text = await response.text();
 
@@ -1586,13 +1584,11 @@
                     return false;
                 }
                 try {
+                    const formBody = `token=${encodeURIComponent(token)}&review=${encodeURIComponent(String(reviewId))}`;
                     const response = await fetch(API.deleteReview, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            token: token,
-                            review: String(reviewId)
-                        })
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+                        body: formBody
                     });
                     const responseText = await response.text();
 
@@ -1626,14 +1622,11 @@
                     return false;
                 }
                 try {
+                    const formBody = `token=${encodeURIComponent(token)}&review=${encodeURIComponent(String(reviewId))}&rating=${encodeURIComponent(String(ratingValue))}`;
                     const response = await fetch(API.rateReview, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            token: token,
-                            review: String(reviewId),
-                            rating: String(ratingValue)
-                        })
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+                        body: formBody
                     });
                     const responseText = await response.text();
 
@@ -1661,7 +1654,7 @@
                 }
             }
 
-            // ========== КОНЕЦ ИЗМЕНЁННЫХ ФУНКЦИЙ ==========
+            // ========== КОНЕЦ ИСПРАВЛЕННЫХ ФУНКЦИЙ ==========
 
             async function assignSingleRole(roleId, silent = false) {
                 if (!token) {
